@@ -133,6 +133,7 @@ r92eu_attach(struct rtwn_usb_softc *uc)
 	sc->sc_fw_download_enable	= r12a_fw_download_enable;
 #endif
 	sc->sc_llt_init			= r92e_llt_init;
+	sc->sc_usb_quirks		= rtwn_nop_softc;
 	sc->sc_set_page_size		= rtwn_nop_int_softc;
 	sc->sc_lc_calib			= r92c_lc_calib;
 	sc->sc_iq_calib			= rtwn_nop_softc;	/* XXX TODO */

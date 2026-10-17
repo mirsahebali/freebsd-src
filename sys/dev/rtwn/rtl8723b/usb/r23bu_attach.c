@@ -118,6 +118,7 @@ r23bu_attach(struct rtwn_usb_softc *uc)
 	sc->sc_fw_download_enable	= r23b_fw_download_enable;
 #endif
 	sc->sc_llt_init			= r92e_llt_init;
+	sc->sc_usb_quirks		= rtwn_nop_softc;
 	sc->sc_set_page_size		= r23b_set_page_size;
 	sc->sc_lc_calib			= r23b_lc_calib;
 	sc->sc_iq_calib			= r23b_iq_calib;

@@ -308,6 +308,7 @@ struct rtwn_softc {
 	void		(*sc_fw_download_enable)(struct rtwn_softc *, int);
 #endif
 	int		(*sc_llt_init)(struct rtwn_softc *);
+	void		(*sc_usb_quirks)(struct rtwn_softc *);
 	int		(*sc_set_page_size)(struct rtwn_softc *);
 	void		(*sc_lc_calib)(struct rtwn_softc *);
 	void		(*sc_iq_calib)(struct rtwn_softc *);
@@ -369,6 +370,7 @@ struct rtwn_softc {
 	void		(*sc_init_rf)(struct rtwn_softc *);
 	void		(*sc_init_antsel)(struct rtwn_softc *);
 	void		(*sc_post_init)(struct rtwn_softc *);
+	void		(*sc_init_stats)(struct rtwn_softc *);
 	int		(*sc_init_bcnq1_boundary)(struct rtwn_softc *);
 	int		(*sc_set_tx_power)(struct rtwn_softc *,
 			    struct ieee80211vap *);

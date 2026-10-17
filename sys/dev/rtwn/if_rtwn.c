@@ -1520,6 +1520,8 @@ rtwn_dma_init(struct rtwn_softc *sc)
 	if (error != 0)
 		return (error);
 
+	rtwn_usb_quirks(sc);
+
 	/* Set the number of pages for each queue. */
 	RTWN_DPRINTF(sc, RTWN_DEBUG_RESET,
 	    "%s: pages per queue: high %d, normal %d, low %d, public %d\n",
@@ -1903,7 +1905,10 @@ rtwn_init_beacon_reg(struct rtwn_softc *sc)
 	rtwn_write_1(sc, R92C_BCN_CTRL(0), R92C_BCN_CTRL_DIS_TSF_UDT0);
 	rtwn_write_1(sc, R92C_BCN_CTRL(1), R92C_BCN_CTRL_DIS_TSF_UDT0);
 	rtwn_write_2(sc, R92C_TBTT_PROHIBIT, 0x6404);
-	rtwn_write_1(sc, R92C_DRVERLYINT, 0x05);
+	// TODO: can we put this somewhere non branching?
+	if (sc->fwsig != 0x88f) {
+		rtwn_write_1(sc, R92C_DRVERLYINT, 0x05);
+	}
 	rtwn_write_1(sc, R92C_BCNDMATIM, 0x02);
 	rtwn_write_2(sc, R92C_BCNTCFG, 0x660f);
 }
@@ -2038,6 +2043,14 @@ rtwn_init(struct rtwn_softc *sc)
 
 	/* Initialize GPIO setting. */
 	rtwn_setbits_1(sc, R92C_GPIO_MUXCFG, R92C_GPIO_MUXCFG_ENBT, 0);
+
+	// TODO: Put this in a header file and put that somewhere non brancing
+#define REG_CCK_PD_THRESH			0x0a0a
+#define  CCK_PD_TYPE1_LV1_TH		0x83
+	if(sc->fwsig == 0x88f) {
+		/* CCK PD */
+		rtwn_write_1(sc, REG_CCK_PD_THRESH, CCK_PD_TYPE1_LV1_TH);
+	}
 
 	/* Initialize MRR. */
 	rtwn_mrr_init(sc);

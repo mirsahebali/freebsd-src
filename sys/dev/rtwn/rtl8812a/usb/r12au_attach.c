@@ -234,6 +234,7 @@ r12au_attach(struct rtwn_usb_softc *uc)
 	sc->sc_fw_download_enable	= r12a_fw_download_enable;
 #endif
 	sc->sc_llt_init			= r92c_llt_init;
+	sc->sc_usb_quirks		= rtwn_nop_softc;
 	sc->sc_set_page_size		= r12a_set_page_size;
 	sc->sc_lc_calib			= r12a_lc_calib;
 	sc->sc_iq_calib			= r12a_iq_calib;
