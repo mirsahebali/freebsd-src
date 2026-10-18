@@ -517,6 +517,8 @@ void	rtwn_attach_vht_cap_info_mcs(struct rtwn_softc *);
 #endif
 #define rtwn_llt_init(_sc) \
 	(((_sc)->sc_llt_init)((_sc)))
+#define rtwn_usb_quirks(_sc) \
+	(((_sc)->sc_usb_quirks)((_sc)))
 #define rtwn_set_page_size(_sc) \
 	(((_sc)->sc_set_page_size)((_sc)))
 #define rtwn_lc_calib(_sc) \

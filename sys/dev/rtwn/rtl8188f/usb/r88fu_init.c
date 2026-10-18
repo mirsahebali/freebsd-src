@@ -412,24 +412,6 @@ r88fu_init_bb(struct rtwn_softc *sc)
 	r88f_init_bb_common(sc);
 }
 
-void
-r88fu_init_stats(struct rtwn_softc *sc)
-{
-	uint32_t clr;
-
-	rtwn_write_2(sc, REG_NHM_TIMER_8723B + 2, 0xc350);
-	rtwn_write_2(sc, REG_NHM_TH9_TH10_8723B + 2, 0xffff);
-	rtwn_write_4(sc, REG_NHM_TH3_TO_TH0_8723B, 0xffffff50);
-	rtwn_write_4(sc, REG_NHM_TH7_TO_TH4_8723B, 0xffffffff);
-
-	rtwn_setbits_4(sc, REG_FPGA0_IQK, 0, 0xff);
-
-	clr = /* (BIT(8) | BIT(9) | BIT(10)) */ 0x00000100 | 0x00000200 | 0x00000400;
-	rtwn_setbits_4(sc, REG_NHM_TH9_TH10_8723B, clr, 0x00000100);
-
-
-	rtwn_setbits_4(sc, REG_OFDM0_FA_RSTC, 0, 0x00000080);
-}
 static void
 r88fu_init_stats(struct rtwn_softc *sc)
 {
