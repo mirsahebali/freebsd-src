@@ -7,6 +7,7 @@
  * Global definitions.
  */
 #define R88F_CHIP_B_CUT 0x04
+
 /* 
  * Function declarations.
  */
@@ -39,12 +40,12 @@ void	r88f_iq_calib(struct rtwn_softc *);
 void	r88f_set_chan(struct rtwn_softc *, struct ieee80211_channel *);
 void	r88f_set_bw20(struct rtwn_softc *, uint8_t);
 void	r88f_get_txpower(struct rtwn_softc *, int, struct ieee80211_channel *,
-		      uint8_t power[RTWN_RIDX_COUNT]);
+		      uint8_t[RTWN_RIDX_COUNT]);
 int	r88f_set_tx_power(struct rtwn_softc *, struct ieee80211vap *);
 
 /* r88f_fw.c */
-void r88f_fw_reset(struct rtwn_softc *, int);
-void r88f_fw_download_enable(struct rtwn_softc *, int);
+void	r88f_fw_reset(struct rtwn_softc *, int);
+void	r88f_fw_download_enable(struct rtwn_softc *, int);
 
 /* r88f_rf.c */
 void	r88f_rf_write(struct rtwn_softc *, int, uint8_t, uint32_t);

@@ -51,46 +51,12 @@
 
 #include <dev/rtwn/rtl8192e/r92e_reg.h>
 
+#include <dev/rtwn/rtl8188e/usb/r88eu_reg.h>
 #include <dev/rtwn/rtl8188e/r88e.h>
 #include <dev/rtwn/rtl8188e/usb/r88eu.h>
-#include <dev/rtwn/rtl8188e/usb/r88eu_reg.h>
 
+#include <dev/rtwn/rtl8188f/r88f_reg.h>
 #include <dev/rtwn/rtl8188f/usb/r88fu.h>
-
-
-// TODO: move this .h and rename defs
-#define R88F_DWBCN0_CTRL		0x208
-#define REG_SYS_FUNC			0x0002
-#define REG_NHM_TH9_TH10_8723B		0x0890
-#define REG_NHM_TIMER_8723B		0x0894
-#define REG_NHM_TH3_TO_TH0_8723B	0x0898
-#define REG_NHM_TH7_TO_TH4_8723B	0x089c
-#define SYS_FUNC_BBRSTB			0x00000001
-#define SYS_FUNC_BB_GLB_RSTN		0x00000002
-#define SYS_FUNC_USBA			0x00000004
-#define SYS_FUNC_UPLL			0x00000008
-#define SYS_FUNC_USBD			0x00000010
-#define REG_OFDM0_FA_RSTC		0x0c0c
-#define RF6052_REG_IQADJ_G1		0x01
-#define REG_FPGA0_IQK			0x0e28
-#define REG_RF_CTRL			0x001f
-#define RF_ENABLE			0x00000001
-#define RF_RSTB				0x00000002
-#define RF_SDMRSTB			0x00000004
-#define SYS_FUNC_DIO_RF			0x00002000
-#define R92E_RXDMA_PRO			0x290
-#define R92E_RXDMA_PRO_DMA_MODE		0x02
-#define R92E_DWBCN1_CTRL		0x228
-#define R92C_AFE_LDO_CTRL		0x027
-#define REG_RXPKT_NUM			0x0284
-#define RXPKT_NUM_RW_RELEASE_EN		0x00040000
-#define REG_RQPN_NPQ			0x0214
-#define REG_RQPN			0x0200
-#define RXPKT_NUM_RXDMA_IDLE		0x00020000
-#define RF6052_REG_T_METER_8723B	0x42
-#define REG_TX_REPORT_CTRL		0x04ec
-#define  TX_REPORT_CTRL_TIMER_ENABLE	0x00000002
-#define REG_TX_REPORT_TIME		0x04f0
 
 void
 r88fu_init_tx_agg(struct rtwn_softc *sc)
@@ -181,6 +147,9 @@ r88fu_power_on(struct rtwn_softc *sc)
 #undef RTWN_CHK
 }
 
+#define R88F_RXPKT_NUM_RW_RELEASE_ENABLE	0x00040000
+#define R88F_RXPKT_NUM_RXDMA_IDLE		0x00020000
+
 static int
 r88fu_flush_fifo(struct rtwn_softc *sc)
 {
@@ -188,7 +157,7 @@ r88fu_flush_fifo(struct rtwn_softc *sc)
 	int retry, retval;
 	rtwn_write_1(sc, R92C_TXPAUSE, 0xff);
 
-	rtwn_bb_setbits(sc, REG_RXPKT_NUM, 0, RXPKT_NUM_RW_RELEASE_EN);
+	rtwn_bb_setbits(sc, R92C_RXPKT_NUM, 0, R88F_RXPKT_NUM_RW_RELEASE_ENABLE);
 
 	retry = 100;
 
@@ -196,16 +165,16 @@ r88fu_flush_fifo(struct rtwn_softc *sc)
 	retval = -16;
 
 	do {
-		reg = rtwn_bb_read(sc, REG_RXPKT_NUM);
-		if(reg & RXPKT_NUM_RXDMA_IDLE) {
+		reg = rtwn_bb_read(sc, R92C_RXPKT_NUM);
+		if(reg & R88F_RXPKT_NUM_RXDMA_IDLE) {
 			retval = 0;
 			break;
 		}
 		
 	} while (retry--);
 
-	rtwn_write_2(sc, REG_RQPN_NPQ, 0);
-	rtwn_bb_write(sc, REG_RQPN, 0x80000000);
+	rtwn_write_2(sc, R92C_RQPN_NPQ, 0);
+	rtwn_bb_write(sc, R92C_RQPN, 0x80000000);
 	rtwn_delay(sc, 2);
 
 	if (!retry)
@@ -394,12 +363,14 @@ void
 r88fu_init_bb(struct rtwn_softc *sc)
 {
 	/* Enable BB and RF */
-	rtwn_setbits_2(sc, REG_SYS_FUNC, 0, SYS_FUNC_BB_GLB_RSTN | SYS_FUNC_BBRSTB | SYS_FUNC_DIO_RF);
+	rtwn_setbits_2(sc, R92C_SYS_FUNC_EN, 0,
+	    R92C_SYS_FUNC_EN_BBRSTB | R92C_SYS_FUNC_EN_BB_GLB_RST |
+	    R92C_SYS_FUNC_EN_DIO_RF);
 
 	/*
 	 * Per vendor driver, run power sequence before init of RF
 	 */
-	rtwn_write_1(sc, REG_RF_CTRL, RF_ENABLE | RF_RSTB | RF_SDMRSTB);
+	rtwn_write_1(sc, R92C_RF_CTRL, R92C_RF_CTRL_EN | R92C_RF_CTRL_RSTB | R92C_RF_CTRL_SDMRSTB);
 
 	rtwn_write_1(sc, R92C_SYS_FUNC_EN,
 	    R92C_SYS_FUNC_EN_USBA | R92C_SYS_FUNC_EN_USBD |
@@ -407,7 +378,7 @@ r88fu_init_bb(struct rtwn_softc *sc)
 
 	rtwn_delay(sc, 10);
 
-	rtwn_rf_write(sc, 0, RF6052_REG_IQADJ_G1, 0x780);
+	rtwn_rf_write(sc, 0, R88F_RF6052_REG_IQADJ_G1, 0x780);
 
 	r88f_init_bb_common(sc);
 }
@@ -417,18 +388,18 @@ r88fu_init_stats(struct rtwn_softc *sc)
 {
 	uint32_t clr;
 
-	rtwn_write_2(sc, REG_NHM_TIMER_8723B + 2, 0xc350);
-	rtwn_write_2(sc, REG_NHM_TH9_TH10_8723B + 2, 0xffff);
-	rtwn_write_4(sc, REG_NHM_TH3_TO_TH0_8723B, 0xffffff50);
-	rtwn_write_4(sc, REG_NHM_TH7_TO_TH4_8723B, 0xffffffff);
+	rtwn_write_2(sc, R88F_NHM_TIMER_8723B + 2, 0xc350);
+	rtwn_write_2(sc, R88F_NHM_TH9_TH10_8723B + 2, 0xffff);
+	rtwn_write_4(sc, R88F_NHM_TH3_TO_TH0_8723B, 0xffffff50);
+	rtwn_write_4(sc, R88F_NHM_TH7_TO_TH4_8723B, 0xffffffff);
 
-	rtwn_setbits_4(sc, REG_FPGA0_IQK, 0, 0xff);
+	rtwn_setbits_4(sc, R92C_FPGA0_IQK, 0, 0xff);
 
 	clr = /* (BIT(8) | BIT(9) | BIT(10)) */ 0x00000100 | 0x00000200 | 0x00000400;
-	rtwn_setbits_4(sc, REG_NHM_TH9_TH10_8723B, clr, 0x00000100);
+	rtwn_setbits_4(sc, R88F_NHM_TH9_TH10_8723B, clr, 0x00000100);
 
 
-	rtwn_setbits_4(sc, REG_OFDM0_FA_RSTC, 0, 0x00000080);
+	rtwn_setbits_4(sc, R88F_OFDM0_FA_RSTC, 0, 0x00000080);
 }
 
 void
@@ -439,13 +410,13 @@ r88fu_post_init(struct rtwn_softc *sc)
 	/*
 	 * This should enable thermal meter
 	 */
-	rtwn_rf_setbits(sc, 0, RF6052_REG_T_METER_8723B, 0, 0x30000);
+	rtwn_rf_setbits(sc, 0, R88E_RF_T_METER, 0, 0x30000);
 
-	rtwn_setbits_1(sc, REG_TX_REPORT_CTRL, 0, TX_REPORT_CTRL_TIMER_ENABLE);
+	rtwn_setbits_1(sc, R88E_TX_RPT_CTRL, 0, R88E_TX_RPT2_ENA);
 	/* Set MAX RPT MACID */
-	rtwn_write_1(sc, REG_TX_REPORT_CTRL + 1, 0x02);
+	rtwn_write_1(sc, R88E_TX_RPT_CTRL + 1, R88E_TX_RPT2_ENA);
 	/* TX report Timer. Unit: 32us */
-	rtwn_write_2(sc, REG_TX_REPORT_TIME, 0xcdf0);
+	rtwn_write_2(sc, R88E_TX_RPT_TIME, 0xcdf0);
 	/* tmp ps ? */
 	reg8 = rtwn_read_1(sc, 0xa3);
 	reg8 &= 0xf8;

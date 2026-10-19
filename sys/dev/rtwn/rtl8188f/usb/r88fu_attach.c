@@ -55,13 +55,6 @@
 #include <dev/rtwn/rtl8188f/r88f_rom_defs.h>
 #include <dev/rtwn/rtl8188f/r88f_rom_image.h>
 
-#define REG_CR			0x0100
-#define CR_MAC_TX_ENABLE	0x00000040
-#define CR_MAC_RX_ENABLE	0x00000080
-#define  CR_SECURITY_ENABLE	0x00000200
-#define REG_TXDMA_OFFSET_CHK		0x020c
-#define  TXDMA_OFFSET_DROP_DATA_EN	0x00000200
-
 static struct rtwn_r88e_txpwr r88e_txpwr;
 
 void	r88fu_attach(struct rtwn_usb_softc *);
@@ -114,8 +107,8 @@ r88fu_attach_private(struct rtwn_softc *sc)
 static void
 r88fu_usb_quirks(struct rtwn_softc *sc)
 {
-	rtwn_setbits_2(sc, REG_CR, 0, CR_MAC_TX_ENABLE | CR_MAC_RX_ENABLE);
-	rtwn_bb_setbits(sc, REG_TXDMA_OFFSET_CHK, 0, TXDMA_OFFSET_DROP_DATA_EN);
+	rtwn_setbits_2(sc, R92C_CR, 0, R92C_CR_MACTXEN | R92C_CR_MACRXEN);
+	rtwn_bb_setbits(sc, R92C_TXDMA_OFFSET_CHK, 0, R92C_RQPN);
 }
 
 static void
