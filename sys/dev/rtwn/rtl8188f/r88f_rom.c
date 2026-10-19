@@ -28,6 +28,7 @@
 #include <dev/rtwn/if_rtwn_debug.h>
 
 #include <dev/rtwn/rtl8192c/r92c_var.h>
+#include <dev/rtwn/rtl8192c/r92c_reg.h>
 
 #include <dev/rtwn/rtl8188e/r88e.h>
 #include <dev/rtwn/rtl8188e/r88e_priv.h>
@@ -38,21 +39,8 @@
 #include <dev/rtwn/rtl8188f/r88f_priv.h>
 #include <dev/rtwn/rtl8188f/r88f_rom_image.h>
 
-// TODO: move this to defs
-#define R92C_EFUSE_TEST			0x034
-#define R92C_EFUSE_ACCESS               0x0cf
-
-/* Bits for R92C_EFUSE_TEST. */
-#define R92C_EFUSE_TEST_SEL_M	0x00000300
-#define R92C_EFUSE_TEST_SEL_S	8
-
-/* Bits for R92C_EFUSE_ACCESS. */
-#define R92C_EFUSE_ACCESS_OFF		0x00
-#define R92C_EFUSE_ACCESS_ON		0x69
-
 #define R88F_XTAL1_MASK		0x007e0000	/* bits 22:17 */
 #define R88F_XTAL0_MASK		0x0001f800	/* bits 16:11 */
-
 int
 r88f_efuse_preread(struct rtwn_softc *sc)
 {

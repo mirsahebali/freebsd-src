@@ -27,6 +27,9 @@
 #include <dev/rtwn/if_rtwn_debug.h>
 #include <dev/rtwn/if_rtwn_ridx.h>
 
+#include <dev/rtwn/rtl8723b/r23b_reg.h>
+#include <dev/rtwn/rtl8812a/r12a_reg.h>
+
 #include <dev/rtwn/rtl8192c/r92c.h>
 #include <dev/rtwn/rtl8192c/r92c_var.h>
 
@@ -37,42 +40,21 @@
 #include <dev/rtwn/rtl8188f/r88f.h>
 #include <dev/rtwn/rtl8188f/r88f_reg.h>
 
+// TODO: just rename
 #define RTWN_POWER_COUNT 28
 #define RTWN_RIDX_MCS0	12
 #define RTWN_RIDX_MCS8	(RTWN_RIDX_MCS0 + 8)
-
-// TODO: defs from linux, rename and move to thier appropriate header files
-#define REG_TX_AGC_A_CCK1_MCS32	0xe08
-#define REG_OFDM0_RX_D_SYNC_PATH	0x0c40
 #define REG_FPGA0_XB_RF_INT_OE		0x0864
-#define R88F_OFDM0_RX_D_SYNC_PATH 0xc40
-#define R88F_SOS1_PATH_SWITCH 0x948
-#define REG_FPGA0_ANALOG4	0x088c
-#define REG_OFDM0_XA_AGC_CORE1	0x0c50
-#define FPGA_RF_MODE_CCK	0x01000000
-#define REG_FPGA0_PSD_FUNC	0x0808
-#define REG_FPGA0_PSD_REPORT	0x08b4
-#define REG_FPGA0_RF_MODE	0x0800
-#define REG_OFDM1_CSI_FIX_MASK1		0x0d40
-#define REG_OFDM1_CSI_FIX_MASK2		0x0d44
-#define REG_OFDM1_CFO_TRACKING		0x0d2c
-#define REG_RESPONSE_RATE_SET		0x0440
-#define  RSR_RSC_LOWER_SUB_CHANNEL	0x200000
-#define  RSR_RSC_UPPER_SUB_CHANNEL	0x400000
-#define  RSR_RSC_BANDWIDTH_40M		(RSR_RSC_UPPER_SUB_CHANNEL | \
-					 RSR_RSC_LOWER_SUB_CHANNEL)
-#define  MODE_AG_BW_20MHZ_8723B		(0x00000400 | 0x00000800)
-#define  MODE_AG_BW_40MHZ_8723B		0x00000400
-#define  MODE_AG_BW_80MHZ_8723B		0
-#define REG_DATA_SUBCHANNEL	0x0483
-#define REG_CCK0_SYSTEM			0x0a00
-#define  CCK0_SIDEBAND	 0x00000010
-#define R92C_OFDM0_TX_PSDO_NOISE_WEIGHT 0x0ce4
-#define R92C_OFDM0_XA_RX_AFE		0x0c10
-#define MODE_AG_CHANNEL_MASK 0x3ff
-#define RF6052_REG_MODE_AG		0x18	/* RF channel and BW switch */
-#define RF6052_REG_RXG_MIX_SWBW		0x87
-
+#define FPGA_RF_MODE_CCK	0x1000000
+#define REG_FPGA0_ANALOG4	0x88c
+#define REG_FPGA0_PSD_FUNC	0x808
+#define REG_FPGA0_PSD_REPORT	0x8b4
+#define MODE_AG_BW_20MHZ_8723B		(0x00000400 | 0x00000800)
+#define MODE_AG_BW_40MHZ_8723B		0x00000400
+#define REG_OFDM1_CSI_FIX_MASK1		0xd40
+#define REG_OFDM1_CSI_FIX_MASK2		0xd44
+#define REG_OFDM1_CFO_TRACKING		0xd2c
+#define R92C_OFDM0_XA_RX_AFE		0xc10
 
 static int
 rtwn_chan2group(int chan)
@@ -213,11 +195,11 @@ r88f_spur_calibration(struct rtwn_softc* sc, struct ieee80211_channel *c, int ch
 	rtwn_bb_setbits(sc, R88F_OFDM0_RX_D_SYNC_PATH, 0,/* GENMASK(28, 24) = */ 0x1f000000);
 
 	/* enable notch filter */
-	rtwn_bb_setbits(sc, REG_OFDM0_RX_D_SYNC_PATH, 0, /* BIT(9) = */ 0x00000200);
+	rtwn_bb_setbits(sc, R88F_OFDM0_RX_D_SYNC_PATH, 0, /* BIT(9) = */ 0x00000200);
 
 	if (chan <= 14 && frequencies[chan] > 0)
 	{
-		reg948 = rtwn_read_4(sc, R88F_SOS1_PATH_SWITCH);
+		reg948 = rtwn_read_4(sc, R23B_ANT_SEL);
 		hw_ctrl = reg948 & /* BIT(6) = */ 0x00000040;
 		sw_ctrl = !hw_ctrl;
 		if(hw_ctrl)
@@ -231,7 +213,7 @@ r88f_spur_calibration(struct rtwn_softc* sc, struct ieee80211_channel *c, int ch
 
 		if (hw_ctrl_s1 || sw_ctrl_s1) 
 		{
-			initial_gain = rtwn_read_4(sc, REG_OFDM0_XA_AGC_CORE1);
+			initial_gain = rtwn_read_4(sc, R92C_OFDM0_AGCCORE1(0));
 
 			/* Disable CCK block */
 			rtwn_bb_setbits(sc, R92C_FPGA0_RFMOD, FPGA_RF_MODE_CCK, 0);
@@ -259,7 +241,7 @@ r88f_spur_calibration(struct rtwn_softc* sc, struct ieee80211_channel *c, int ch
 			rtwn_bb_write(sc, REG_FPGA0_ANALOG4, 0xccc000c0);
 
 			/* Enable CCK block */
-			rtwn_bb_setbits(sc, REG_FPGA0_RF_MODE, 0, FPGA_RF_MODE_CCK);
+			rtwn_bb_setbits(sc, R92C_FPGA0_RFMOD, 0, FPGA_RF_MODE_CCK);
 
 			rtwn_bb_write(sc, R92C_OFDM0_AGCCORE1(0), initial_gain);
 			
@@ -314,10 +296,10 @@ r88f_set_chan(struct rtwn_softc *sc, struct ieee80211_channel *c)
 	rtwn_bb_setbits(sc, R92C_FPGA0_RFMOD, 0x00002000, 0x00004000 | 0x00001000);
 
 	/* Small bandwidth */
-	rtwn_bb_setbits(sc, R92C_OFDM0_TX_PSDO_NOISE_WEIGHT, 0xc0000000, 0);
+	rtwn_bb_setbits(sc, R92C_OFDM0_TXPSEUDONOISEWGT, 0xc0000000, 0);
 
 	/* ADC buffer clk */
-	rtwn_bb_setbits(sc, R92C_OFDM0_TX_PSDO_NOISE_WEIGHT, 0x20000000, 0x10000000);
+	rtwn_bb_setbits(sc, R92C_OFDM0_TXPSEUDONOISEWGT, 0x20000000, 0x10000000);
 
 	/* ADC buffer clk */
 	rtwn_bb_setbits(sc, R92C_OFDM0_XA_RX_AFE, 0x20000000, 0x10000000);
@@ -357,7 +339,7 @@ r88f_set_chan(struct rtwn_softc *sc, struct ieee80211_channel *c)
 			subchannel = 2;
 		else
 			subchannel = 1;
-		rtwn_bb_setbits(sc, REG_DATA_SUBCHANNEL, 0x0000000F, subchannel);
+		rtwn_bb_setbits(sc, R12A_DATA_SEC, 0x0000000F, subchannel);
 
 		rtwn_bb_setbits(sc, R92C_RRSR, R92C_RRSR_RSC_LOWSUBCHNL | R92C_RRSR_RSC_UPSUBCHNL, 0);
 	}
@@ -370,7 +352,7 @@ r88f_set_chan(struct rtwn_softc *sc, struct ieee80211_channel *c)
 		reg |= MODE_AG_BW_20MHZ_8723B;
 	else if (IEEE80211_IS_CHAN_HT40(c) || IEEE80211_IS_CHAN_VHT40(c))
 		reg |= MODE_AG_BW_40MHZ_8723B;
-	rtwn_rf_write(sc, 0, RF6052_REG_MODE_AG, reg);
+	rtwn_rf_write(sc, 0, R92C_RF_CHNLBW, reg);
 
 	/* FILTER BW&RC Corner (ACPR) */
 	if (IEEE80211_IS_CHAN_HT20(c) || IEEE80211_IS_CHAN_VHT20(c) ||
@@ -378,7 +360,7 @@ r88f_set_chan(struct rtwn_softc *sc, struct ieee80211_channel *c)
 		reg = 0x00065;
 	else if (IEEE80211_IS_CHAN_HT40(c) || IEEE80211_IS_CHAN_VHT40(c))
 		reg = 0x00025;
-	rtwn_rf_write(sc, 0, RF6052_REG_RXG_MIX_SWBW, reg);
+	rtwn_rf_write(sc, 0, R88F_RF_RXG_GAIN, reg);
 
 	if (IEEE80211_IS_CHAN_HT20(c) || IEEE80211_IS_CHAN_VHT20(c) ||
 	    (!IEEE80211_IS_CHAN_HT(c) && !IEEE80211_IS_CHAN_VHT(c)))

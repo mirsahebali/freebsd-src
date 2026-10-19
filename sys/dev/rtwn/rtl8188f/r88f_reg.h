@@ -2,11 +2,6 @@
 #define R88F_REG_H
 
 /* System Configuration. */
-#define R88F_HT_SINGLE_AMPDU	0x4c7
-#define R88F_AMPDU_MAX_TIME	0x456
-#define R88F_RX_PKT_LIMIT	0x60c
-#define R88F_USTIME_EDCA	0x638
-
 #define R88F_HQ_NPAGES		12
 #define R88F_LQ_NPAGES		2
 #define R88F_NQ_NPAGES		2
@@ -14,13 +9,17 @@
 #define R88F_TX_PAGE_COUNT	247
 #define R88F_RX_DMA_BUFFER_SIZE	0x3f80
 
-#define R88F_DWBCN0_CTRL		0x208
-#define R88F_OFDM0_FA_RSTC		0x0c0c
-#define R88F_NHM_TH9_TH10_8723B		0x0890
-#define R88F_NHM_TIMER_8723B		0x0894
-#define R88F_NHM_TH3_TO_TH0_8723B	0x0898
-#define R88F_NHM_TH7_TO_TH4_8723B	0x089c
-#define R88F_RF6052_REG_IQADJ_G1	0x01
+#define R88F_OFDM0_FA_RSTC		0xc0c
+#define R88F_NHM_TH9_TH10_8723B		0x890
+#define R88F_NHM_TIMER_8723B		0x894
+#define R88F_NHM_TH3_TO_TH0_8723B	0x898
+#define R88F_NHM_TH7_TO_TH4_8723B	0x89c
+#define R88F_OFDM0_RX_D_SYNC_PATH	0xc40
+#define R88F_FPGA0_XCD_RF_SW_CTRL	0x0874
+
+#define R88F_ADDA_REGS			16
+#define R88F_MAC_REGS			4
+#define R88F_BB_REGS			9
 
 /* Baseband registers. */
 #define R88F_RX_DFIR		0x954
@@ -28,14 +27,20 @@
 /* RF registers. */
 #define R88F_RF_RXG_GAIN 0x87
 
-/* NextGen regs. */
-#define R88F_RF6052_REG_GAIN_CCA 0xdf
+/*
+ * RF (6052) registers
+ */
+#define R88F_RF6052_REG_GAIN_CCA	0xdf
+#define R88F_RF6052_REG_UNKNOWN_55	0x55
+#define R88F_RF6052_REG_PAD_TXG		0x56
+
+#define R88F_EFUSE_CTRL 0x0030
 
 /* Bits for R88F_RF_RXG_GAIN. */
 #define R88F_RF_TXA_PREPAD 0x65
 
 /* Bits for R88F_RF6052_REG_GAIN_CCA. */
-#define R88F_REG_PKTBUF_DBG_CTRL 0x0140
+#define R88F_REG_PKTBUF_DBG_CTRL 0x140
 
 /* Bits for R88F_HT_SINGLE_AMPDU. */
 

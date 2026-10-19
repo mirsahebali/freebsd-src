@@ -1,23 +1,3 @@
-/*	$OpenBSD: if_urtwn.c,v 1.16 2011/02/10 17:26:40 jakemsr Exp $	*/
-
-/*-
- * Copyright (c) 2010 Damien Bergamini <damien.bergamini@free.fr>
- * Copyright (c) 2014 Kevin Lo <kevlo@FreeBSD.org>
- * Copyright (c) 2015-2016 Andriy Voskoboinyk <avos@FreeBSD.org>
- *
- * Permission to use, copy, modify, and distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- */
-
 #include <sys/cdefs.h>
 
 #include <sys/param.h>
@@ -66,7 +46,7 @@ r88fu_init_tx_agg(struct rtwn_softc *sc)
 
 
 	/* TX aggregation */
-	rtwn_setbits_4(sc, R88F_DWBCN0_CTRL, 0xf << 4, usb_tx_agg_desc_num << 4);
+	rtwn_setbits_4(sc, R92C_TDECTRL, 0xf << 4, usb_tx_agg_desc_num << 4);
 	rtwn_write_1(sc, R92E_DWBCN1_CTRL, usb_tx_agg_desc_num << 1);
 
 	/* RX aggegation */
@@ -378,7 +358,7 @@ r88fu_init_bb(struct rtwn_softc *sc)
 
 	rtwn_delay(sc, 10);
 
-	rtwn_rf_write(sc, 0, R88F_RF6052_REG_IQADJ_G1, 0x780);
+	rtwn_rf_write(sc, 0, R92C_RF_IQADJ_G(0), 0x780);
 
 	r88f_init_bb_common(sc);
 }
