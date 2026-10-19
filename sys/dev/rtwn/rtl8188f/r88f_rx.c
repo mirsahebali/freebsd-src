@@ -31,9 +31,8 @@
 
 #include <dev/rtwn/rtl8192e/r92e_reg.h>
 
-#include <dev/rtwn/rtl8188e/r88e_rx_desc.h>
-
 #include <dev/rtwn/rtl8188f/r88f.h>
+#include <dev/rtwn/rtl8188e/r88e_rx_desc.h>
 
 int8_t
 r88f_get_rssi_cck(struct rtwn_softc *sc, void *physt)

@@ -370,7 +370,6 @@ struct rtwn_softc {
 	void		(*sc_init_rf)(struct rtwn_softc *);
 	void		(*sc_init_antsel)(struct rtwn_softc *);
 	void		(*sc_post_init)(struct rtwn_softc *);
-	void		(*sc_init_stats)(struct rtwn_softc *);
 	int		(*sc_init_bcnq1_boundary)(struct rtwn_softc *);
 	int		(*sc_set_tx_power)(struct rtwn_softc *,
 			    struct ieee80211vap *);

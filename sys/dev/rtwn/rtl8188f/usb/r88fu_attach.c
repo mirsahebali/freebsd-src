@@ -38,19 +38,19 @@
 
 #include <dev/rtwn/rtl8812a/r12a.h>
 
-#include <dev/rtwn/rtl8188e/r88e_priv.h>
-#include <dev/rtwn/rtl8188e/r88e_rom_image.h>	/* for 'macaddr' field */
 #include <dev/rtwn/rtl8723b/r23b.h>
 
 #include <dev/rtwn/rtl8812a/r12a.h>
 #include <dev/rtwn/rtl8812a/usb/r12au_tx_desc.h>
 #include <dev/rtwn/rtl8812a/usb/r12au.h>
 
+#include <dev/rtwn/rtl8188e/r88e_priv.h>
+#include <dev/rtwn/rtl8188e/r88e_rom_image.h>	/* for 'macaddr' field */
 #include <dev/rtwn/rtl8188e/usb/r88eu.h>
 
 #include <dev/rtwn/rtl8188f/r88f.h>
-#include <dev/rtwn/rtl8188f/r88f_reg.h>
 #include <dev/rtwn/rtl8188f/usb/r88fu.h>
+#include <dev/rtwn/rtl8188f/r88f_reg.h>
 #include <dev/rtwn/rtl8188f/r88f_priv.h>
 #include <dev/rtwn/rtl8188f/r88f_rom_defs.h>
 #include <dev/rtwn/rtl8188f/r88f_rom_image.h>
@@ -196,7 +196,6 @@ r88fu_attach(struct rtwn_usb_softc *uc)
 	sc->sc_init_rf			= r88f_init_rf;
 	sc->sc_init_antsel		= r23b_init_antsel;
 	sc->sc_post_init		= r88fu_post_init;
-	sc->sc_init_stats		= r88fu_init_stats;
 	sc->sc_init_bcnq1_boundary	= rtwn_nop_int_softc;
 	sc->sc_set_tx_power		= r92c_set_tx_power;
 
