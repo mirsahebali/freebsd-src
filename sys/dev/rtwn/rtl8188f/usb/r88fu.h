@@ -1,11 +1,13 @@
+/*
+ * Copyright (c) 2026 Mir Saheb Ali <mirsahebali@pm.me>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #ifndef RTL8188FU_H
 #define RTL8188FU_H
 
 #include <dev/rtwn/rtl8188f/r88f.h>
-
-/*
- * Global definitions
- */
 
 /*
  * Function declarations

@@ -1,4 +1,11 @@
+/*
+ * Copyright (c) 2026 Mir Saheb Ali <mirsahebali@pm.me>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #include <sys/cdefs.h>
+#include "opt_wlan.h"
 
 #include <sys/param.h>
 #include <sys/lock.h>
@@ -26,10 +33,10 @@
 
 #include <dev/rtwn/if_rtwn_debug.h>
 
-#include <dev/rtwn/rtl8192c/r92c_reg.h>
-
 #include <dev/rtwn/rtl8188e/r88e.h>
 #include <dev/rtwn/rtl8188e/r88e_reg.h>
+
+#include <dev/rtwn/rtl8192c/r92c_reg.h>
 
 #include <dev/rtwn/rtl8723b/r23b_reg.h>
 

@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Mir Saheb Ali <mirsahebali@pm.me>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #include <sys/cdefs.h>
 #include "opt_wlan.h"
 
@@ -26,13 +32,13 @@
 #include <dev/rtwn/if_rtwnvar.h>
 #include <dev/rtwn/if_rtwn_ridx.h>
 
+#include <dev/rtwn/rtl8188e/r88e_rx_desc.h>
+
 #include <dev/rtwn/rtl8192c/r92c.h>
 #include <dev/rtwn/rtl8192c/r92c_rx_desc.h>
-
 #include <dev/rtwn/rtl8192e/r92e_reg.h>
 
 #include <dev/rtwn/rtl8188f/r88f.h>
-#include <dev/rtwn/rtl8188e/r88e_rx_desc.h>
 
 int8_t
 r88f_get_rssi_cck(struct rtwn_softc *sc, void *physt)

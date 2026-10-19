@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2026 Mir Saheb Ali <mirsahebali@pm.me>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
+#include <sys/cdefs.h>
+#include "opt_wlan.h"
+
 #include <sys/param.h>
 #include <sys/lock.h>
 #include <sys/mutex.h>
