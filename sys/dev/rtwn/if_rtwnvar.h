@@ -253,6 +253,7 @@ struct rtwn_softc {
 	uint16_t		fwver;
 	uint16_t		fwsig;
 	int			fwcur;
+	uint16_t		fw_start_addr;
 
 	void		(*sc_node_free)(struct ieee80211_node *);
 	void		(*sc_scan_curchan)(struct ieee80211_scan_state *,

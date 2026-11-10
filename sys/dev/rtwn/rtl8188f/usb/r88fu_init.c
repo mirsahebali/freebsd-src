@@ -151,7 +151,7 @@ r88fu_power_on(struct rtwn_softc *sc)
 #define R88F_RXPKT_NUM_RW_RELEASE_ENABLE	0x00040000
 #define R88F_RXPKT_NUM_RXDMA_IDLE		0x00020000
 
-static int
+int
 r88fu_flush_fifo(struct rtwn_softc *sc)
 {
 	uint32_t reg;

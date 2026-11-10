@@ -51,6 +51,7 @@
 #include <dev/rtwn/if_rtwnreg.h>
 #include <dev/rtwn/if_rtwnvar.h>
 #include <dev/rtwn/if_rtwn_nop.h>
+#include <dev/rtwn/if_rtwn_fw.h>
 
 #include <dev/rtwn/usb/rtwn_usb_var.h>
 
@@ -273,6 +274,7 @@ r21au_attach(struct rtwn_usb_softc *uc)
 	sc->name			= "RTL8821AU";
 	sc->fwname			= "rtwn-rtl8821aufw";
 	sc->fwsig			= 0x210;
+	sc->fw_start_addr		= R92C_FW_START_ADDR;
 
 	sc->page_count			= R21A_TX_PAGE_COUNT;
 	sc->pktbuf_count		= R12A_TXPKTBUF_COUNT;

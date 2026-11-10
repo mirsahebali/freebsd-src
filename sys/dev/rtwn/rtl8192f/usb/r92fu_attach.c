@@ -74,6 +74,8 @@
 #include <dev/rtwn/rtl8188f/usb/r88fu.h>
 
 #include <dev/rtwn/rtl8192f/r92f.h>
+#include <dev/rtwn/rtl8192f/usb/r92fu.h>
+#include <dev/rtwn/rtl8192f/r92f_priv.h>
 
 static struct rtwn_r88e_txpwr r88e_txpwr;
 
@@ -98,7 +100,6 @@ r88f_postattach(struct rtwn_softc *sc)
 	rs->rs_scan_end = ic->ic_scan_end;
 	ic->ic_scan_end = r92c_scan_end;
 }
-
 static void
 r92fu_attach_private(struct rtwn_softc *sc)
 {
@@ -173,11 +174,11 @@ r92fu_attach(struct rtwn_usb_softc *uc)
 	sc->sc_efuse_preread		= r88f_efuse_preread;
 	sc->sc_parse_rom		= r88f_parse_rom;
 	sc->sc_set_led			= r88e_set_led;
-	sc->sc_power_on			= r88fu_power_on;
-	sc->sc_power_off		= r88fu_power_off;
+	sc->sc_power_on			= r92fu_power_on;
+	sc->sc_power_off		= r92fu_power_off;
 #ifndef RTWN_WITHOUT_UCODE
-	sc->sc_fw_reset			= r88f_fw_reset;
-	sc->sc_fw_download_enable	= r88f_fw_download_enable;
+	sc->sc_fw_reset			= r92f_fw_reset;
+	sc->sc_fw_download_enable	= r92f_fw_download_enable;
 #endif
 	sc->sc_llt_init			= r88f_llt_init;
 	sc->sc_enable_mac_txrx		= r88fu_enable_mac_txrx;
@@ -215,17 +216,18 @@ r92fu_attach(struct rtwn_usb_softc *uc)
 	sc->sc_init_bcnq1_boundary	= rtwn_nop_int_softc;
 	sc->sc_set_tx_power		= r92c_set_tx_power;
 
-	sc->mac_prog			= &rtl8188ftv_mac[0];
-	sc->mac_size			= nitems(rtl8188ftv_mac);
-	sc->bb_prog			= &rtl8188ftv_bb[0];
-	sc->bb_size			= nitems(rtl8188ftv_bb);
-	sc->agc_prog			= &rtl8188ftv_agc[0];
-	sc->agc_size			= nitems(rtl8188ftv_agc);
-	sc->rf_prog			= &rtl8188ftv_rf[0];
+	sc->mac_prog			= &rtl8192fu_mac[0];
+	sc->mac_size			= nitems(rtl8192fu_mac);
+	sc->bb_prog			= &rtl8192fu_bb[0];
+	sc->bb_size			= nitems(rtl8192fu_bb);
+	sc->agc_prog			= &rtl8192fu_agc[0];
+	sc->agc_size			= nitems(rtl8192fu_agc);
+	sc->rf_prog			= &rtl8192fu_rf[0];
 
 	sc->name			= "RTL8192FU";
 	sc->fwname			= "rtwn-rtl8192fufw";
 	sc->fwsig			= 0x92f;
+	sc->fw_start_addr		= R92F_FW_START_ADDR;
 
 	sc->ackto			= 0x40;
 	sc->npubqpages			= R88EU_PUBQ_NPAGES;
@@ -251,8 +253,8 @@ r92fu_attach(struct rtwn_usb_softc *uc)
 	sc->bcn_status_reg[1]		= R92C_TDECTRL;
 	sc->rcr				= 0;
 
-	sc->ntxchains			= 1;
-	sc->nrxchains			= 1;
+	sc->ntxchains			= 2;
+	sc->nrxchains			= 2;
 
 	r92fu_attach_private(sc);
 }

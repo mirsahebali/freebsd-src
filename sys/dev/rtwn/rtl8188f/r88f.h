@@ -40,6 +40,7 @@ int	r88f_set_page_size(struct rtwn_softc *);
 void	r88f_init_ampdu(struct rtwn_softc *);
 int	r88f_llt_init(struct rtwn_softc *);
 void	r88f_init_rf(struct rtwn_softc *);
+int	r88f_read_efuse_1(struct rtwn_softc *, uint16_t, uint8_t *);
 
 /* r88f_calib.c */
 void	r88f_lc_calib(struct rtwn_softc *);

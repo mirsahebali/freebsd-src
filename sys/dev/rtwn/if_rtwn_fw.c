@@ -65,7 +65,7 @@ rtwn_fw_loadpage(struct rtwn_softc *sc, int page, const uint8_t *buf,
 	rtwn_write_4(sc, R92C_MCUFWDL, reg);
 
 	error = 0;
-	off = R92C_FW_START_ADDR;
+	off = sc->fw_start_addr;
 	while (len > 0) {
 		if (len > R92C_FW_MAX_BLOCK_SIZE)
 			mlen = R92C_FW_MAX_BLOCK_SIZE;

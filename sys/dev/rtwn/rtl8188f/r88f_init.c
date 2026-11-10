@@ -90,7 +90,7 @@ r88f_init_ampdu(struct rtwn_softc *sc)
 	    R92C_RSV_CTRL_R_DIS_PRST_0 | R92C_RSV_CTRL_R_DIS_PRST_1);
 }
 
-static int
+int
 r88f_read_efuse_1(struct rtwn_softc *sc, uint16_t offset, uint8_t *data)
 {
 	int i;

@@ -69,6 +69,7 @@
 #define R92C_AFE_XTAL_CTRL_EXT	0x078
 #define R92C_LDO_SWR_CTRL		0x07c
 #define R92C_MCUFWDL			0x080
+#define R92C_FW_START_ADDR		0x1000
 #define R92C_HMEBOX_EXT(idx)		(0x088 + (idx) * 2)
 #define R92C_EFUSE_ACCESS		0x0cf
 #define R92C_BIST_SCAN			0x0d0

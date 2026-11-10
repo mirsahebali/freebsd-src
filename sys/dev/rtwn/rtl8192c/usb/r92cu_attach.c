@@ -45,6 +45,7 @@
 #include <dev/rtwn/if_rtwnreg.h>
 #include <dev/rtwn/if_rtwnvar.h>
 #include <dev/rtwn/if_rtwn_nop.h>
+#include <dev/rtwn/if_rtwn_fw.h>
 
 #include <dev/rtwn/usb/rtwn_usb_var.h>
 
@@ -83,6 +84,7 @@ r92cu_postattach(struct rtwn_softc *sc)
 		sc->fwname = "rtwn-rtl8192cfwT";
 	}
 	sc->fwsig = 0x88c;
+	sc->fw_start_addr		= R92C_FW_START_ADDR;
 
 	rs->rs_scan_start = ic->ic_scan_start;
 	ic->ic_scan_start = r92c_scan_start;

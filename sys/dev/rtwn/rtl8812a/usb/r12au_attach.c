@@ -56,6 +56,7 @@
 #include <dev/rtwn/if_rtwnvar.h>
 
 #include <dev/rtwn/if_rtwn_nop.h>
+#include <dev/rtwn/if_rtwn_fw.h>
 
 #include <dev/rtwn/usb/rtwn_usb_var.h>
 
@@ -289,6 +290,7 @@ r12au_attach(struct rtwn_usb_softc *uc)
 	sc->name			= "RTL8812AU";
 	sc->fwname			= "rtwn-rtl8812aufw";
 	sc->fwsig			= 0x950;
+	sc->fw_start_addr		= R92C_FW_START_ADDR;
 
 	sc->page_count			= R12A_TX_PAGE_COUNT;
 	sc->pktbuf_count		= R12A_TXPKTBUF_COUNT;

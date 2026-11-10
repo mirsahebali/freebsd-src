@@ -20,5 +20,6 @@ void	r88fu_init_rx_agg(struct rtwn_softc *);
 void	r88fu_init_tx_agg(struct rtwn_softc *);
 void	r88fu_init_bb(struct rtwn_softc *);
 void	r88fu_post_init(struct rtwn_softc *);
+int	r88fu_flush_fifo(struct rtwn_softc *);
 
 #endif /* RTL8188FU_H */
