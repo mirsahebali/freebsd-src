@@ -220,12 +220,14 @@ r92ce_attach(struct rtwn_pci_softc *pc)
 	sc->sc_init_rx_agg		= rtwn_nop_softc;
 	sc->sc_init_beacon_timer	= r92c_init_beacon_timer;
 	sc->sc_init_ampdu		= r92ce_init_ampdu;
+	sc->sc_get_qmap			= r92ce_set_qmap;
 	sc->sc_init_intr		= r92ce_init_intr;
 	sc->sc_init_edca		= r92ce_init_edca;
 	sc->sc_init_bb			= r92ce_init_bb;
 	sc->sc_init_rf			= r92c_init_rf;
 	sc->sc_init_antsel		= rtwn_nop_softc;
 	sc->sc_post_init		= r92ce_post_init;
+	sc->sc_set_qmap			= r92ce_set_qmap;
 	sc->sc_init_bcnq1_boundary	= rtwn_nop_int_softc;
 	sc->sc_set_tx_power		= r92c_set_tx_power;
 

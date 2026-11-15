@@ -22,12 +22,16 @@
 #include <net80211/ieee80211_var.h>
 #include <net80211/ieee80211_radiotap.h>
 
+#include <dev/usb/usb.h>
+#include <dev/usb/usbdi.h>
+
 #include <dev/rtwn/if_rtwnreg.h>
 #include <dev/rtwn/if_rtwnvar.h>
 #include <dev/rtwn/usb/rtwn_usb_var.h>
 #include <dev/rtwn/if_rtwn_debug.h>
 
 #include <dev/rtwn/rtl8188e/r88e.h>
+#include <dev/rtwn/rtl8188e/r88e_reg.h>
 #include <dev/rtwn/rtl8188e/usb/r88eu.h>
 #include <dev/rtwn/rtl8188e/usb/r88eu_reg.h>
 
@@ -40,6 +44,8 @@
 
 #include <dev/rtwn/rtl8192f/r92f.h>
 #include <dev/rtwn/rtl8192f/usb/r92fu.h>
+#include <dev/rtwn/rtl8192f/r92f_reg.h>
+#include <dev/rtwn/rtl8192f/usb/r92fu_reg.h>
 
 static void
 r92fu_set_emu_state(struct rtwn_softc *sc)
@@ -53,7 +59,6 @@ r92fu_set_emu_state(struct rtwn_softc *sc)
 	    R92C_APS_FSMCO_AFSM_PCIE | R92C_APS_FSMCO_AFSM_HSUS, 0);
 }
 
-// XXX: move it a reg.h file
 #define R92F_MAX_REG_POLL 500
 
 static int
@@ -126,35 +131,25 @@ r92fu_set_active_state(struct rtwn_softc *sc)
 	if (!count)
 		return -16;
 
-// XXX: move it a reg.h file
-#define  AFE_MISC_WL_XTAL_CTRL		0x40
-#define  GPIO_INTM_EDGE_TRIG_IRQ	0x200
-
 	/* Enable WL control XTAL setting */
-	rtwn_setbits_1(sc, R92C_AFE_MISC, 0, AFE_MISC_WL_XTAL_CTRL);
+	rtwn_setbits_1(sc, R92C_AFE_MISC, 0, R92F_AFE_MISC_WL_XTAL_CTRL);
 
 	/* Enable falling edge triggering interrupt */
-	rtwn_setbits_2(sc, R92C_GPIO_INTM, 0, GPIO_INTM_EDGE_TRIG_IRQ);
+	rtwn_setbits_2(sc, R92C_GPIO_INTM, 0, R92F_GPIO_INTM_EDGE_TRIG_IRQ);
 
 
-/*  RTL8723 WIFI/BT/GPS Multi-Function GPIO Pin Control. */
-#define REG_GPIO_IO_SEL_2		0x0062
-#define GPIO_IO_SEL_2_GPIO09_IRQ	0x200
-#define GPIO_IO_SEL_2_GPIO09_INPUT	0x002
 	/* Enable GPIO9 data mode */
-	rtwn_setbits_2(sc, REG_GPIO_IO_SEL_2, GPIO_IO_SEL_2_GPIO09_IRQ, 0);
+	rtwn_setbits_2(sc, R92F_GPIO_IO_SEL_2, R92F_GPIO_IO_SEL_2_GPIO09_IRQ, 0);
 
 	/* Enable GPIO9 input mode */
-	rtwn_setbits_2(sc, REG_GPIO_IO_SEL_2, GPIO_IO_SEL_2_GPIO09_INPUT, 0);
+	rtwn_setbits_2(sc, R92F_GPIO_IO_SEL_2, R92F_GPIO_IO_SEL_2_GPIO09_INPUT, 0);
 
 	/* Enable HSISR GPIO[C:0] interrupt */
 	rtwn_setbits_1(sc, R92C_HSIMR, 0, 0x01);
 	
-/* Enable GPIO[9] as WiFi RF HW powerdown source */
-#define  MULTI_WIFI_HW_ROF_EN		0x8	
 
 	/* RF HW ON/OFF Enable */
-	rtwn_setbits_1(sc, R92C_MULTI_FUNC_CTRL, MULTI_WIFI_HW_ROF_EN, 0);
+	rtwn_setbits_1(sc, R92C_MULTI_FUNC_CTRL, R92F_MULTI_WIFI_HW_ROF_EN, 0);
 
 	/* Register Lock Disable */
 	rtwn_setbits_1(sc, R92C_RSV_CTRL, 0, 0x80);
@@ -174,24 +169,20 @@ r92fu_set_active_state(struct rtwn_softc *sc)
 	/* enable RF path S0 */
 	rtwn_write_1(sc, R92C_AFE_XTAL_CTRL_EXT + 3, R92C_RF_CTRL_SDMRSTB | R92C_RF_CTRL_RSTB | R92C_RF_CTRL_EN);
 
-#define REG_RSVD_1			0x0097
 	/* AFE_Ctrl */
-	rtwn_setbits_1(sc, REG_RSVD_1, 0, 0x20);
+	rtwn_setbits_1(sc, R92F_RSVD_1, 0, 0x20);
 
-#define REG_RSVD_4			0x00dc
 	/* AFE_Ctrl */
-	rtwn_write_1(sc, REG_RSVD_4, 0xcc);
+	rtwn_write_1(sc, R92F_RSVD_4, 0xcc);
 
 	/* AFE_Ctrl 0x24[4:3]=00 for xtal gmn */
 	rtwn_setbits_1(sc, R92C_AFE_XTAL_CTRL, 0x18, 0);
 
-#define REG_GPIO_A0			0x1050
-#define REG_GPIO_B0			0x105b
 	/* GPIO_A[31:0] Pull down software register */
-	rtwn_bb_write(sc, REG_GPIO_A0, 0xffffffff);
+	rtwn_bb_write(sc, R92F_GPIO_A0, 0xffffffff);
 
 	/* GPIO_B[7:0] Pull down software register */
-	rtwn_write_1(sc, REG_GPIO_B0, 0xff);
+	rtwn_write_1(sc, R92F_GPIO_B0, 0xff);
 
 	/* Register Lock Enable */
 	rtwn_setbits_1(sc, R92C_RSV_CTRL, 0x80, 0);
@@ -211,10 +202,9 @@ r92fu_set_lps_state(struct rtwn_softc *sc)
 
 	retry = 100;
 
-#define R92F_SCH_TX_CMD			0x05f8
 	/* Poll 32 bit wide R92C_SCH_TX_CMD for 0 to ensure no TX is pending. */
 	do {
-		reg = rtwn_bb_read(sc, R92F_SCH_TX_CMD);
+		reg = rtwn_bb_read(sc, R88E_SCH_TXCMD);
 		if (!reg)
 			break;
 
@@ -295,12 +285,8 @@ r92fu_power_off(struct rtwn_softc *sc)
 {
 	r88fu_flush_fifo(sc);
 
-// XXX: move it a reg.h file
-#define R92F_TX_REPORT_CTRL		0x04ec
-#define R92F_TX_REPORT_CTRL_TIMER_ENABLE	0x2
-
 	/* Stop Tx Report Timer. 0x4EC[Bit1]=b'0 */
-	rtwn_setbits_1(sc, R92F_TX_REPORT_CTRL, R92F_TX_REPORT_CTRL_TIMER_ENABLE, 0);
+	rtwn_setbits_1(sc, R88E_TX_RPT_CTRL, 0x2, 0);
 	
 	/* stop rx */
 	rtwn_write_1(sc, R92C_CR, 0x00);
@@ -320,4 +306,95 @@ r92fu_power_off(struct rtwn_softc *sc)
 
 	r92fu_set_active_state(sc);
 	r92fu_set_disabled_state(sc);
+}
+
+void
+r92fu_set_qmap(struct rtwn_softc *sc)
+{
+	struct rtwn_usb_softc *uc = RTWN_USB_SOFTC(sc);
+	uint32_t qmap, reg;
+
+	switch (uc->ntx) {
+		case 1:
+			qmap = R92F_USB_TRXDMA_CTRL_QMAP_HQ;
+			break;
+		case 2:
+			qmap = R92F_USB_TRXDMA_CTRL_QMAP_HQ_NQ;
+			break;
+		default:
+			qmap = R92F_USB_TRXDMA_CTRL_QMAP_3EP;
+			break;
+	}
+
+	reg = rtwn_read_4(sc, R92C_TRXDMA_CTRL);
+	reg &= 0x7;
+	reg |= qmap;
+	rtwn_write_4(sc, R92C_TRXDMA_CTRL, reg);
+}
+
+void
+r92fu_init_ampdu(struct rtwn_softc *sc)
+{
+	struct rtwn_usb_softc *uc = RTWN_USB_SOFTC(sc);
+	uint8_t val;
+
+	val = rtwn_read_1(sc, R12A_RXDMA_PRO);
+	val = RW(val, R12A_BURST_SZ,
+	    usbd_get_speed(uc->uc_udev) == USB_SPEED_HIGH ?
+	    R12A_BURST_SZ_USB2 : R12A_BURST_SZ_USB1);
+	val |= R12A_DMA_MODE | SM(R12A_BURST_CNT, 3);
+	rtwn_write_1(sc, R12A_RXDMA_PRO, val);
+
+	/* Enable single packet AMPDU. */
+	rtwn_setbits_1(sc, R12A_HT_SINGLE_AMPDU, 0,
+	    R12A_HT_SINGLE_AMPDU_PKT_ENA);
+
+	rtwn_write_2(sc, R92C_MAX_AGGR_NUM, 0x1f1f);
+	rtwn_write_1(sc, R12A_AMPDU_MAX_TIME, 0x5e);
+	rtwn_write_4(sc, R12A_AMPDU_MAX_LENGTH, UINT32_MAX);
+
+	/*
+	 * The vendor driver says this is for
+	 * "VHT packet length 11K", but this chip
+	 * doesn't support VHT rates...
+	 */
+	rtwn_write_1(sc, R92C_RX_PKT_LIMIT, 0x18);
+
+	rtwn_write_1(sc, R92C_PIFS, 0);
+	rtwn_write_1(sc, R92C_FWHW_TXQ_CTRL, R92C_FWHW_TXQ_CTRL_AMPDU_RTY_NEW);
+	rtwn_write_4(sc, R92C_FAST_EDCA_CTRL, 0x03086666);
+
+	rtwn_write_1(sc, R92C_USTIME_TSF, 0x50);
+	rtwn_write_1(sc, R92C_USTIME_EDCA, 0x50);
+
+	/* Do not reset MAC. */
+	rtwn_setbits_1(sc, R92C_RSV_CTRL, 0, 0x60);
+}
+
+void
+r92fu_init_intr(struct rtwn_softc *sc)
+{
+	/*
+	 * Enable all interrupts - not obvious USB needs to do this
+	 */
+	rtwn_write_4(sc, R92C_HISR, 0xffffffff);
+	rtwn_write_4(sc, R92C_HIMR, 0xffffffff);
+}
+
+void
+r92fu_init_rx_agg(struct rtwn_softc *sc)
+{
+	uint32_t agg_rx;
+	uint8_t agg_ctrl;
+
+	/* RX aggregation */
+	agg_ctrl = rtwn_read_1(sc, R92C_TRXDMA_CTRL);
+	agg_ctrl &= ~R92C_TRXDMA_CTRL_RXDMA_AGG_EN;
+
+	agg_rx = rtwn_read_4(sc, R92C_RXDMA_AGG_PG_TH);
+	agg_rx &= ~R92F_RXDMA_USB_AGG_EN;
+	agg_rx &= ~0xff0f; /* reset agg size and timeout */
+
+	rtwn_write_1(sc, R92C_TRXDMA_CTRL, agg_ctrl);
+	rtwn_write_4(sc, R92C_RXDMA_AGG_PG_TH, agg_rx);
 }

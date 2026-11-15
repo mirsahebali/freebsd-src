@@ -63,6 +63,7 @@
 #include <dev/rtwn/rtl8723b/r23b.h>
 
 #include <dev/rtwn/rtl8812a/r12a.h>
+#include <dev/rtwn/rtl8812a/r12a_reg.h>
 #include <dev/rtwn/rtl8812a/usb/r12au.h>
 #include <dev/rtwn/rtl8812a/usb/r12au_tx_desc.h>
 
@@ -75,69 +76,32 @@
 
 #include <dev/rtwn/rtl8192f/r92f.h>
 #include <dev/rtwn/rtl8192f/usb/r92fu.h>
+#include <dev/rtwn/rtl8192f/r92f_var.h>
 #include <dev/rtwn/rtl8192f/r92f_priv.h>
-
-static struct rtwn_r88e_txpwr r88e_txpwr;
 
 void	r92fu_attach(struct rtwn_usb_softc *);
 
 static void
-r92fu_set_macaddr(struct rtwn_softc *sc, uint8_t *buf)
-{
-	struct r88f_rom *rom = (struct r88f_rom *)buf;
-
-	IEEE80211_ADDR_COPY(sc->sc_ic.ic_macaddr, rom->macaddr);
-}
-
-static void
-r88f_postattach(struct rtwn_softc *sc)
-{
-	struct r92c_softc *rs = sc->sc_priv;
-	struct ieee80211com *ic = &sc->sc_ic;
-
-	rs->rs_scan_start = ic->ic_scan_start;
-	ic->ic_scan_start = r92c_scan_start;
-	rs->rs_scan_end = ic->ic_scan_end;
-	ic->ic_scan_end = r92c_scan_end;
-}
-static void
 r92fu_attach_private(struct rtwn_softc *sc)
 {
-	struct r92c_softc *rs;
+	struct r92f_softc *rs;
 
-	rs = malloc(sizeof(struct r92c_softc), M_RTWN_PRIV, M_WAITOK | M_ZERO);
+	rs = malloc(sizeof(struct r92f_softc), M_RTWN_PRIV, M_WAITOK | M_ZERO);
 
-	rs->rs_txpwr			= &r88e_txpwr;
-	rs->rs_txagc			= NULL;
-
-	rs->rs_set_bw20			= r88e_set_bw20;
-	rs->rs_get_txpower		= r88f_get_txpower;
-	rs->rs_set_gain			= r88e_set_gain;
-	rs->rs_tx_enable_ampdu		= r88e_tx_enable_ampdu;
-	rs->rs_tx_setup_hwseq		= r88e_tx_setup_hwseq;
-	rs->rs_tx_setup_macid		= r88e_tx_setup_macid;
-	rs->rs_set_rom_opts		= r92fu_set_macaddr;
-
-	rs->rf_read_delay[0]		= 10;
-	rs->rf_read_delay[1]		= 100;
-	rs->rf_read_delay[2]		= 10;
-
-	device_printf(sc->sc_dev, "[SELF DEBUG] %s: 8192fu was attached\n", __func__);
+	rs->super.rs_tx_setup_macid = r92f_tx_setup_macid;
 
 	sc->sc_priv = rs;
 }
 
+// XXX: move this somewhere else?
 static void
-r88fu_enable_mac_txrx(struct rtwn_softc *sc)
+r92fu_enable_mac_txrx(struct rtwn_softc *sc)
 {
+	rtwn_setbits_2(sc, R92C_AFE_XTAL_CTRL_EXT, 0, 0x8010);
+	rtwn_setbits_4(sc, R92C_TXDMA_OFFSET_CHK, 0,
+	    R92C_TXDMA_OFFSET_DROP_DATA_EN);
 	rtwn_setbits_2(sc, R92C_CR, 0, R92C_CR_MACTXEN | R92C_CR_MACRXEN);
-	rtwn_bb_setbits(sc, R92C_TXDMA_OFFSET_CHK, 0, R92C_RQPN);
-}
-
-static void
-r88fu_adj_devcaps(struct rtwn_softc *sc)
-{
-	/* XXX TODO? */
+	rtwn_write_1(sc, R12A_EARLY_MODE_CONTROL, 0);
 }
 
 void
@@ -152,43 +116,43 @@ r92fu_attach(struct rtwn_usb_softc *uc)
 	/* Common part. */
 	sc->sc_flags			= RTWN_FLAG_EXT_HDR;
 
-	sc->sc_set_chan			= r88f_set_chan;
-	sc->sc_fill_tx_desc		= r12a_fill_tx_desc;
+	sc->sc_set_chan			= r92f_set_chan;
+	sc->sc_fill_tx_desc		= r92f_fill_tx_desc;
 	sc->sc_fill_tx_desc_raw		= r12a_fill_tx_desc_raw;
 	sc->sc_fill_tx_desc_null	= r12a_fill_tx_desc_null;
 	sc->sc_dump_tx_desc		= r12au_dump_tx_desc;
 	sc->sc_tx_radiotap_flags	= r12a_tx_radiotap_flags;
 	sc->sc_rx_radiotap_flags	= r12a_rx_radiotap_flags;
-	sc->sc_get_rx_stats		= r88f_get_rx_stats;
-	sc->sc_get_rssi_cck		= r88f_get_rssi_cck;
-	sc->sc_get_rssi_ofdm		= r88f_get_rssi_ofdm;
+	sc->sc_get_rx_stats		= r92f_get_rx_stats;
+	sc->sc_get_rssi_cck		= r92f_get_rssi_cck;
+	sc->sc_get_rssi_ofdm		= r92f_get_rssi_ofdm;
 	sc->sc_classify_intr		= r12au_classify_intr;
 	sc->sc_handle_tx_report		= r12a_ratectl_tx_complete;
 	sc->sc_handle_tx_report2	= rtwn_nop_softc_uint8_int;
 	sc->sc_handle_c2h_report	= r92e_handle_c2h_report;
 	sc->sc_check_frame		= rtwn_nop_int_softc_mbuf;
 	sc->sc_rf_read			= r92c_rf_read;
-	sc->sc_rf_write			= r88e_rf_write;
+	sc->sc_rf_write			= r92c_rf_write;
 	sc->sc_check_condition		= r92c_check_condition;
 	sc->sc_efuse_postread		= rtwn_nop_softc;
-	sc->sc_efuse_preread		= r88f_efuse_preread;
-	sc->sc_parse_rom		= r88f_parse_rom;
-	sc->sc_set_led			= r88e_set_led;
+	sc->sc_efuse_preread		= rtwn_nop_int_softc;
+	sc->sc_parse_rom		= r92f_parse_rom;
+	sc->sc_set_led			= r92f_set_led;
 	sc->sc_power_on			= r92fu_power_on;
 	sc->sc_power_off		= r92fu_power_off;
 #ifndef RTWN_WITHOUT_UCODE
 	sc->sc_fw_reset			= r92f_fw_reset;
 	sc->sc_fw_download_enable	= r92f_fw_download_enable;
 #endif
-	sc->sc_llt_init			= r88f_llt_init;
-	sc->sc_enable_mac_txrx		= r88fu_enable_mac_txrx;
+	sc->sc_llt_init			= r92c_llt_init;
+	sc->sc_enable_mac_txrx		= r92fu_enable_mac_txrx;
 	sc->sc_set_page_size		= r88f_set_page_size;
-	sc->sc_lc_calib			= r88f_lc_calib;
-	sc->sc_iq_calib			= r88f_iq_calib;
+	sc->sc_lc_calib			= r92f_lc_calib;
+	sc->sc_iq_calib			= r92f_iq_calib;
 	sc->sc_read_chipid_vendor	= rtwn_nop_softc_uint32;
-	sc->sc_adj_devcaps		= r88fu_adj_devcaps;
+	sc->sc_adj_devcaps		= rtwn_nop_softc;
 	sc->sc_vap_preattach		= rtwn_nop_softc_vap;
-	sc->sc_postattach		= r88f_postattach;
+	sc->sc_postattach		= rtwn_nop_softc;	/* XXX TODO? */
 	sc->sc_detach_private		= r92c_detach_private;
 	sc->sc_set_media_status		= r88e_set_media_status;
 #ifndef RTWN_WITHOUT_UCODE
@@ -196,25 +160,26 @@ r92fu_attach(struct rtwn_usb_softc *uc)
 	sc->sc_set_pwrmode		= r88e_set_pwrmode;
 	sc->sc_set_rssi			= rtwn_nop_softc;	/* XXX TODO? */
 #endif
-	sc->sc_beacon_init		= r92c_beacon_init;
-	sc->sc_beacon_enable		= r88e_beacon_enable;
-	sc->sc_sta_beacon_enable	= r88e_sta_beacon_enable;
+	sc->sc_beacon_init		= r12a_beacon_init;
+	sc->sc_beacon_enable		= r92c_beacon_enable;
+	sc->sc_sta_beacon_enable	= r92c_sta_beacon_enable;
 	sc->sc_beacon_set_rate		= rtwn_nop_void_int;
 	sc->sc_beacon_select		= rtwn_nop_softc_int;
 	sc->sc_temp_measure		= r88e_temp_measure;
 	sc->sc_temp_read		= r88e_temp_read;
-	sc->sc_init_tx_agg		= r88fu_init_tx_agg;
-	sc->sc_init_rx_agg		= r88fu_init_rx_agg;
+	sc->sc_init_tx_agg		= r92cu_init_tx_agg;
+	sc->sc_init_rx_agg		= r92fu_init_rx_agg;
 	sc->sc_init_beacon_timer	= rtwn_nop_softc;
-	sc->sc_init_ampdu		= r88f_init_ampdu;
-	sc->sc_init_intr		= r88eu_init_intr;
+	sc->sc_init_ampdu		= r92fu_init_ampdu;
+	sc->sc_init_intr		= r92fu_init_intr;
 	sc->sc_init_edca		= r92c_init_edca;
-	sc->sc_init_bb			= r88fu_init_bb;
-	sc->sc_init_rf			= r88f_init_rf;
-	sc->sc_init_antsel		= r23b_init_antsel;
-	sc->sc_post_init		= r88fu_post_init;
+	sc->sc_init_bb			= r92f_init_bb;
+	sc->sc_init_rf			= r92c_init_rf;
+	sc->sc_init_antsel		= rtwn_nop_softc;
+	sc->sc_post_init		= rtwn_nop_softc;
+	sc->sc_set_qmap			= r92fu_set_qmap;
 	sc->sc_init_bcnq1_boundary	= rtwn_nop_int_softc;
-	sc->sc_set_tx_power		= r92c_set_tx_power;
+	sc->sc_set_tx_power		= r92f_set_tx_power;
 
 	sc->mac_prog			= &rtl8192fu_mac[0];
 	sc->mac_size			= nitems(rtl8192fu_mac);
@@ -231,20 +196,20 @@ r92fu_attach(struct rtwn_usb_softc *uc)
 
 	sc->ackto			= 0x40;
 	sc->npubqpages			= R88EU_PUBQ_NPAGES;
-	sc->nhqpages			= R88F_HQ_NPAGES;
-	sc->nlqpages			= R88F_LQ_NPAGES;
-	sc->nnqpages			= R88F_NQ_NPAGES;
+	sc->nhqpages			= R92F_HQ_NPAGES;
+	sc->nlqpages			= R92F_LQ_NPAGES;
+	sc->nnqpages			= R92F_NQ_NPAGES;
 	sc->page_size			= R92C_TX_PAGE_SIZE;
 
-	sc->page_count			= R88F_TX_PAGE_COUNT;
-	sc->pktbuf_count		= R88F_TXPKTBUF_COUNT;
+	sc->page_count			= R92F_TX_PAGE_COUNT;
+	sc->pktbuf_count		= R92F_TXPKTBUF_COUNT;
 
 	sc->txdesc_len			= sizeof(struct r12au_tx_desc);
 	sc->efuse_maxlen		= R88E_EFUSE_MAX_LEN;
 	sc->efuse_maplen		= R88E_EFUSE_MAP_LEN;
-	sc->rx_dma_size			= R88F_RX_DMA_BUFFER_SIZE;
+	sc->rx_dma_size			= R92F_RX_DMA_BUFFER_SIZE;
 
-	sc->macid_limit			= R88E_MACID_MAX + 1;
+	sc->macid_limit			= R92F_MACID_MAX - 1;
 	sc->cam_entry_limit		= R92C_CAM_ENTRY_COUNT;
 	sc->fwsize_limit		= R92F_MAX_FW_SIZE;
 	sc->temp_delta			= R88E_CALIB_THRESHOLD;

@@ -339,3 +339,4 @@ r92c_pa_bias_init(struct rtwn_softc *sc)
 	if (!(rs->pa_setting & 0x10))
 		rtwn_setbits_1(sc, 0x16, 0xf0, 0x90);
 }
+

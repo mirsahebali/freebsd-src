@@ -584,7 +584,6 @@ rtwn_pci_attach_methods(struct rtwn_softc *sc)
 	sc->sc_reset_lists	= rtwn_pci_reset_lists;
 	sc->sc_abort_xfers	= rtwn_nop_softc;
 	sc->sc_fw_write_block	= rtwn_pci_fw_write_block;
-	sc->sc_get_qmap		= rtwn_pci_get_qmap;
 	sc->sc_set_desc_addr	= rtwn_pci_set_desc_addr;
 	sc->sc_drop_incorrect_tx = rtwn_nop_softc;
 	sc->sc_beacon_update_begin = rtwn_pci_beacon_update_begin;
