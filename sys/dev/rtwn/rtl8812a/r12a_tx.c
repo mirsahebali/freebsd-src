@@ -410,7 +410,13 @@ r12a_fill_tx_desc(struct rtwn_softc *sc, struct ieee80211_node *ni,
 			qsel = R12A_TXDW1_QSEL_MGNT;
 	} else {
 		macid = RTWN_MACID_BC;
-		qsel = R12A_TXDW1_QSEL_MGNT;
+
+		// this keeps broadcast probe/beacon frames on mgmt, but puts ARP/DHCP broadcast data on BE
+		if (type == IEEE80211_FC0_TYPE_DATA) {
+			qsel = hasqos ? (tid % RTWN_MAX_TID) : R12A_TXDW1_QSEL_BE;
+			txd->txdw2 |= htole32(R12A_TXDW2_AGGBK);
+		} else
+			qsel = R12A_TXDW1_QSEL_MGNT;
 	}
 
 	txd->txdw1 |= htole32(SM(R12A_TXDW1_QSEL, qsel));
@@ -460,7 +466,11 @@ r12a_fill_tx_desc_raw(struct rtwn_softc *sc, struct ieee80211_node *ni,
 
 	/* Fill Tx descriptor. */
 	txd = (struct r12a_tx_desc *)buf;
-	txd->flags0 |= R12A_FLAGS0_LSG | R12A_FLAGS0_FSG;
+
+	// XXX: move this out or reimplement for r92f
+	if (sc->fwsig != 0x92f) {
+		txd->flags0 |= R12A_FLAGS0_LSG | R12A_FLAGS0_FSG;
+	}
 	if (ismcast)
 		txd->flags0 |= R12A_FLAGS0_BMCAST;
 
@@ -500,7 +510,10 @@ r12a_fill_tx_desc_null(struct rtwn_softc *sc, void *buf, int is11b, int qos,
 {
 	struct r12a_tx_desc *txd = (struct r12a_tx_desc *)buf;
 
-	txd->flags0 = R12A_FLAGS0_FSG | R12A_FLAGS0_LSG | R12A_FLAGS0_OWN;
+	// XXX: move this out or reimplement for r92f
+	if (sc->fwsig != 0x92f) {
+		txd->flags0 = R12A_FLAGS0_FSG | R12A_FLAGS0_LSG | R12A_FLAGS0_OWN;
+	}
 	txd->txdw1 = htole32(
 	    SM(R12A_TXDW1_QSEL, R12A_TXDW1_QSEL_MGNT));
 

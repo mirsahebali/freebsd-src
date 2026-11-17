@@ -9,13 +9,15 @@
 #define R92F_HQ_NPAGES		8
 #define R92F_LQ_NPAGES		8
 #define R92F_NQ_NPAGES		8
+#define R92F_PUBQ_NPAGES	0xde
+#define R92F_CAM_ENTRY_COUNT	64
 #define R92F_TXPKTBUF_COUNT	177
 #define R92F_TX_PAGE_COUNT	247
 #define R92F_RX_DMA_BUFFER_SIZE	0x3f40
 #define R92F_MAX_FW_SIZE	31136
 #define R92F_RTWN_POWER_COUNT	28
 #define R92F_FW_START_ADDR	0x4000
-#define R92F_MACID_MAX	128
+#define R92F_MACID_MAX	127
 
 /*
  * Function declarations.

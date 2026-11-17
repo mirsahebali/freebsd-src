@@ -314,8 +314,17 @@ rtwn_usb_tx_start(struct rtwn_softc *sc, struct ieee80211_node *ni,
 	txd = (struct rtwn_tx_desc_common *)tx_desc;
 	txd->pktlen = htole16(m->m_pkthdr.len);
 	txd->offset = sc->txdesc_len;
-	txd->flags0 |= RTWN_FLAGS0_OWN;
+
+	// XXX: move this somewhere non-branching?
+	if (sc->fwsig != 0x92f) {
+		txd->flags0 |= RTWN_FLAGS0_OWN;
+	}
 	rtwn_usb_tx_checksum(txd);
+
+	// XXX: move this somewhere non-branching as well
+	if (sc->fwsig == 0x92f) {
+		txd->txdw7.usb_checksum = ~txd->txdw7.usb_checksum;
+	}
 
 	/* Dump Tx descriptor. */
 	rtwn_dump_tx_desc(sc, tx_desc);

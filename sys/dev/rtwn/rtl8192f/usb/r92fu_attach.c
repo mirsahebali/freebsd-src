@@ -195,7 +195,7 @@ r92fu_attach(struct rtwn_usb_softc *uc)
 	sc->fw_start_addr		= R92F_FW_START_ADDR;
 
 	sc->ackto			= 0x40;
-	sc->npubqpages			= R88EU_PUBQ_NPAGES;
+	sc->npubqpages			= R92F_PUBQ_NPAGES;
 	sc->nhqpages			= R92F_HQ_NPAGES;
 	sc->nlqpages			= R92F_LQ_NPAGES;
 	sc->nnqpages			= R92F_NQ_NPAGES;
@@ -209,14 +209,15 @@ r92fu_attach(struct rtwn_usb_softc *uc)
 	sc->efuse_maplen		= R88E_EFUSE_MAP_LEN;
 	sc->rx_dma_size			= R92F_RX_DMA_BUFFER_SIZE;
 
-	sc->macid_limit			= R92F_MACID_MAX - 1;
-	sc->cam_entry_limit		= R92C_CAM_ENTRY_COUNT;
+	sc->macid_limit			= R92F_MACID_MAX + 1;
+	sc->cam_entry_limit		= R92F_CAM_ENTRY_COUNT;
 	sc->fwsize_limit		= R92F_MAX_FW_SIZE;
 	sc->temp_delta			= R88E_CALIB_THRESHOLD;
 
 	sc->bcn_status_reg[0]		= R92C_TDECTRL;
 	sc->bcn_status_reg[1]		= R92C_TDECTRL;
 	sc->rcr				= 0;
+	sc->sc_ht40			= 1;
 
 	sc->ntxchains			= 2;
 	sc->nrxchains			= 2;

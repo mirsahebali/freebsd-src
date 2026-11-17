@@ -219,20 +219,20 @@ r92f_revise_cck_tx_psf(struct rtwn_softc *sc, uint8_t channel)
 		/* Special value for channel 13 */
 		rtwn_bb_write(sc, R92F_CCK0_TX_FILTER1, 0xf8fe0001);
 		/* Normal values */
-		rtwn_bb_write(sc, R92F_CCK0_TX_FILTER2, 0x64B80C1C);
+		rtwn_bb_write(sc, R92F_CCK0_TX_FILTER2, 0x64b80c1c);
 		rtwn_write_2(sc, R92F_CCK0_DEBUG_PORT, 0x8810);
 		rtwn_bb_write(sc, R92F_CCK0_TX_FILTER3, 0x01235667);
 	} else if (channel == 14) {
 		/* Normal value */
-		rtwn_bb_write(sc, R92F_CCK0_TX_FILTER1, 0xE82C0001);
+		rtwn_bb_write(sc, R92F_CCK0_TX_FILTER1, 0xe82c0001);
 		/* Special values for channel 14 */
-		rtwn_bb_write(sc, R92F_CCK0_TX_FILTER2, 0x0000B81C);
+		rtwn_bb_write(sc, R92F_CCK0_TX_FILTER2, 0x0000b81c);
 		rtwn_write_2(sc, R92F_CCK0_DEBUG_PORT, 0x0000);
 		rtwn_bb_write(sc, R92F_CCK0_TX_FILTER3, 0x00003667);
 	} else {
 		/* Restore normal values from the phy init table */
-		rtwn_bb_write(sc, R92F_CCK0_TX_FILTER1, 0xE82C0001);
-		rtwn_bb_write(sc, R92F_CCK0_TX_FILTER2, 0x64B80C1C);
+		rtwn_bb_write(sc, R92F_CCK0_TX_FILTER1, 0xe82c0001);
+		rtwn_bb_write(sc, R92F_CCK0_TX_FILTER2, 0x64b80c1c);
 		rtwn_write_2(sc, R92F_CCK0_DEBUG_PORT, 0x8810);
 		rtwn_bb_write(sc, R92F_CCK0_TX_FILTER3, 0x01235667);
 	}

@@ -308,7 +308,7 @@ r92fu_power_off(struct rtwn_softc *sc)
 	r92fu_set_disabled_state(sc);
 }
 
-void
+int
 r92fu_set_qmap(struct rtwn_softc *sc)
 {
 	struct rtwn_usb_softc *uc = RTWN_USB_SOFTC(sc);
@@ -329,7 +329,7 @@ r92fu_set_qmap(struct rtwn_softc *sc)
 	reg = rtwn_read_4(sc, R92C_TRXDMA_CTRL);
 	reg &= 0x7;
 	reg |= qmap;
-	rtwn_write_4(sc, R92C_TRXDMA_CTRL, reg);
+	return (rtwn_write_4(sc, R92C_TRXDMA_CTRL, reg));
 }
 
 void
@@ -377,8 +377,8 @@ r92fu_init_intr(struct rtwn_softc *sc)
 	/*
 	 * Enable all interrupts - not obvious USB needs to do this
 	 */
-	rtwn_write_4(sc, R92C_HISR, 0xffffffff);
-	rtwn_write_4(sc, R92C_HIMR, 0xffffffff);
+	// rtwn_write_4(sc, R92C_HISR, 0xffffffff);
+	// rtwn_write_4(sc, R92C_HIMR, 0xffffffff);
 }
 
 void

@@ -59,6 +59,7 @@ r92f_fill_tx_desc(struct rtwn_softc *sc, struct ieee80211_node *ni,
 
 	r12a_fill_tx_desc(sc, ni, m, buf, ridx, force_rate, maxretry);
 
+	txd->flags0 &= ~(R12A_FLAGS0_LSG | R12A_FLAGS0_FSG);
 	txd->txdw1 &= htole32(~R92F_TXDW1_MACID_M);
 	txd->txdw1 |= htole32(SM(R92F_TXDW1_MACID, macid));
 }

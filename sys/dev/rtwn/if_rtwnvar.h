@@ -280,7 +280,7 @@ struct rtwn_softc {
 	void		(*sc_abort_xfers)(struct rtwn_softc *);
 	int		(*sc_fw_write_block)(struct rtwn_softc *,
 			    const uint8_t *, uint16_t, int);
-	void		(*sc_set_qmap)(struct rtwn_softc *);
+	int		(*sc_set_qmap)(struct rtwn_softc *);
 	void		(*sc_set_desc_addr)(struct rtwn_softc *);
 	void		(*sc_drop_incorrect_tx)(struct rtwn_softc *);
 	void		(*sc_beacon_update_begin)(struct rtwn_softc *,
