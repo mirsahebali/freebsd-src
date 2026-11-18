@@ -372,13 +372,13 @@ r92fu_init_ampdu(struct rtwn_softc *sc)
 }
 
 void
-r92fu_init_intr(struct rtwn_softc *sc)
+r92fu_init_tx_agg(struct rtwn_softc *sc)
 {
-	/*
-	 * Enable all interrupts - not obvious USB needs to do this
-	 */
-	// rtwn_write_4(sc, R92C_HISR, 0xffffffff);
-	// rtwn_write_4(sc, R92C_HIMR, 0xffffffff);
+	uint8_t usb_tx_agg_desc_num = 6;
+
+	/* TX aggregation */
+	rtwn_setbits_4(sc, R92C_TDECTRL, 0xf << 4, usb_tx_agg_desc_num << 4);
+	rtwn_write_1(sc, R92E_DWBCN1_CTRL, usb_tx_agg_desc_num << 1);
 }
 
 void
@@ -397,4 +397,47 @@ r92fu_init_rx_agg(struct rtwn_softc *sc)
 
 	rtwn_write_1(sc, R92C_TRXDMA_CTRL, agg_ctrl);
 	rtwn_write_4(sc, R92C_RXDMA_AGG_PG_TH, agg_rx);
+}
+
+void
+r92fu_init_antsel(struct rtwn_softc *sc)
+{
+	rtwn_setbits_1(sc, R92C_LEDCFG2, 0, 0x80);
+}
+
+void
+r92fu_post_init(struct rtwn_softc *sc)
+{
+	uint8_t reg8;
+
+	rtwn_setbits_1(sc, R88E_TX_RPT_CTRL, 0, R88E_TX_RPT2_ENA);
+	/* Set MAX RPT MACID */
+	rtwn_write_1(sc, R88E_TX_RPT_CTRL + 1, R88E_TX_RPT2_ENA);
+	/* TX report Timer. Unit: 32us */
+	rtwn_write_2(sc, R88E_TX_RPT_TIME, 0xcdf0);
+	/* tmp ps ? */
+	reg8 = rtwn_read_1(sc, 0xa3);
+	reg8 &= 0xf8;
+	rtwn_write_1(sc, 0xa3, reg8);
+
+	rtwn_write_1(sc, R12A_EARLY_MODE_CONTROL, 0);
+
+	/* Perform LC calibration. */
+	r92f_lc_calib(sc);
+	/* Perform LO and IQ calibrations. */
+	r92f_iq_calib(sc);
+
+	/*
+	 * This should enable thermal meter
+	 */
+	rtwn_rf_setbits(sc, 0, R88E_RF_T_METER, 0, 0x30000);
+
+	rtwn_write_1(sc, R92C_USB_HRPWM, 0);
+
+	if (sc->sc_ratectl_sysctl == RTWN_RATECTL_FW) {
+		/* No support (yet?) for f/w rate adaptation. */
+		sc->sc_ratectl = RTWN_RATECTL_NET80211;
+	} else
+		sc->sc_ratectl = sc->sc_ratectl_sysctl;
+
 }

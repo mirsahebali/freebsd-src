@@ -54,10 +54,16 @@ r92f_fill_tx_desc(struct rtwn_softc *sc, struct ieee80211_node *ni,
 
 	macid = un->id;
 
+	if (IEEE80211_IS_MULTICAST(mtod(m, struct ieee80211_frame *)->i_addr1))
+		macid = RTWN_MACID_BC;
+
 	if (macid == RTWN_MACID_UNDEFINED)
 		macid = 0;
 
 	r12a_fill_tx_desc(sc, ni, m, buf, ridx, force_rate, maxretry);
+
+	if (IEEE80211_IS_MULTICAST(mtod(m, struct ieee80211_frame *)->i_addr1))
+		macid = RTWN_MACID_BC;
 
 	txd->flags0 &= ~(R12A_FLAGS0_LSG | R12A_FLAGS0_FSG);
 	txd->txdw1 &= htole32(~R92F_TXDW1_MACID_M);

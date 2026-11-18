@@ -18,12 +18,12 @@ struct r92f_rom {
 	uint8_t reserved4;
 	uint8_t rf_board_opt;
 	uint8_t rf_feature_option;
-	uint8_t rf_bt_setting;
+	uint8_t rf_bt_opt;
 	uint8_t version;
 	uint8_t customer_id;
 	uint8_t reserved5[3];
-	uint8_t rf_antenna_option;
-	uint8_t rfe_option;
+	uint8_t rf_ant_opt;
+	uint8_t rfe_opt;
 	uint8_t country_code;
 	uint8_t reserved6[52];
 	uint8_t vid[2];

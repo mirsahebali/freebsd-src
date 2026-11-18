@@ -90,6 +90,10 @@ r92fu_attach_private(struct rtwn_softc *sc)
 
 	rs->super.rs_tx_setup_macid = r92f_tx_setup_macid;
 
+	rs->super.rf_read_delay[0] = 10;
+	rs->super.rf_read_delay[1] = 100;
+	rs->super.rf_read_delay[2] = 10;
+
 	sc->sc_priv = rs;
 }
 
@@ -154,7 +158,7 @@ r92fu_attach(struct rtwn_usb_softc *uc)
 	sc->sc_vap_preattach		= rtwn_nop_softc_vap;
 	sc->sc_postattach		= rtwn_nop_softc;	/* XXX TODO? */
 	sc->sc_detach_private		= r92c_detach_private;
-	sc->sc_set_media_status		= r88e_set_media_status;
+	sc->sc_set_media_status		= r12a_set_media_status;
 #ifndef RTWN_WITHOUT_UCODE
 	sc->sc_set_rsvd_page		= r88e_set_rsvd_page;
 	sc->sc_set_pwrmode		= r88e_set_pwrmode;
@@ -167,16 +171,16 @@ r92fu_attach(struct rtwn_usb_softc *uc)
 	sc->sc_beacon_select		= rtwn_nop_softc_int;
 	sc->sc_temp_measure		= r88e_temp_measure;
 	sc->sc_temp_read		= r88e_temp_read;
-	sc->sc_init_tx_agg		= r92cu_init_tx_agg;
+	sc->sc_init_tx_agg		= r92fu_init_tx_agg;
 	sc->sc_init_rx_agg		= r92fu_init_rx_agg;
 	sc->sc_init_beacon_timer	= rtwn_nop_softc;
 	sc->sc_init_ampdu		= r92fu_init_ampdu;
-	sc->sc_init_intr		= r92fu_init_intr;
+	sc->sc_init_intr		= rtwn_nop_softc;
 	sc->sc_init_edca		= r92c_init_edca;
 	sc->sc_init_bb			= r92f_init_bb;
 	sc->sc_init_rf			= r92c_init_rf;
-	sc->sc_init_antsel		= rtwn_nop_softc;
-	sc->sc_post_init		= rtwn_nop_softc;
+	sc->sc_init_antsel		= r92fu_init_antsel;
+	sc->sc_post_init		= r92fu_post_init;
 	sc->sc_set_qmap			= r92fu_set_qmap;
 	sc->sc_init_bcnq1_boundary	= rtwn_nop_int_softc;
 	sc->sc_set_tx_power		= r92f_set_tx_power;
@@ -210,6 +214,7 @@ r92fu_attach(struct rtwn_usb_softc *uc)
 	sc->rx_dma_size			= R92F_RX_DMA_BUFFER_SIZE;
 
 	sc->macid_limit			= R92F_MACID_MAX + 1;
+	sc->macid_rpt2_max_num		= 2;
 	sc->cam_entry_limit		= R92F_CAM_ENTRY_COUNT;
 	sc->fwsize_limit		= R92F_MAX_FW_SIZE;
 	sc->temp_delta			= R88E_CALIB_THRESHOLD;
@@ -217,7 +222,6 @@ r92fu_attach(struct rtwn_usb_softc *uc)
 	sc->bcn_status_reg[0]		= R92C_TDECTRL;
 	sc->bcn_status_reg[1]		= R92C_TDECTRL;
 	sc->rcr				= 0;
-	sc->sc_ht40			= 1;
 
 	sc->ntxchains			= 2;
 	sc->nrxchains			= 2;

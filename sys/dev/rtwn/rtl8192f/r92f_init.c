@@ -71,6 +71,13 @@ r92f_init_bb_common(struct rtwn_softc *sc)
 {
 	r92c_init_bb_common(sc);
 
+	/* these values are taken out from rtl8192fu_agc_vals as they write
+	to 0xc50 instead of 0xc78 */
+	rtwn_bb_write(sc, R92C_OFDM0_AGCCORE1(0), 0x00e48024);
+	rtwn_delay(sc, 1);
+	rtwn_bb_write(sc, R92C_OFDM0_AGCCORE1(0), 0x00e48020);
+	rtwn_delay(sc, 1);
+
 	r92f_set_crystal_cap(sc);
 }
 
@@ -78,7 +85,7 @@ void
 r92f_init_bb(struct rtwn_softc *sc)
 {
 	/* Enable BB and RF */
-	rtwn_bb_setbits(sc, R92C_SYS_FUNC_EN, 0,
+	rtwn_setbits_2(sc, R92C_SYS_FUNC_EN, 0,
 	    R92C_SYS_FUNC_EN_BBRSTB | R92C_SYS_FUNC_EN_BB_GLB_RST);
 
 	rtwn_write_1(sc, R92C_RF_CTRL, R92C_RF_CTRL_EN | R92C_RF_CTRL_RSTB |
@@ -93,5 +100,6 @@ r92f_init_bb(struct rtwn_softc *sc)
 	r92f_init_bb_common(sc);
 	/* Enable TX/RX for path A and B */
 	rtwn_bb_setbits(sc, R92C_OFDM0_TRXPATHENA, 0xff, 0x33);
+	rtwn_write_1(sc, R92C_TXPAUSE, 0x00);
 }
 

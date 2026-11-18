@@ -139,7 +139,7 @@ r92f_parse_rom(struct rtwn_softc *sc, uint8_t *buf)
 
 	rs->regulatory = MS(rom->rf_board_opt, R92C_ROM_RF1_REGULATORY);
 	rs->crystalcap = rom->crystalcap & 0x3f;
-	rs->rfe = rom->rfe_option;
+	rs->rfe = rom->rfe_opt & 0x1f;
 
 	/* Read MAC address. */
 	IEEE80211_ADDR_COPY(sc->sc_ic.ic_macaddr, rom->macaddr);

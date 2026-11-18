@@ -246,6 +246,11 @@ r92f_set_chan(struct rtwn_softc *sc, struct ieee80211_channel *c)
 	bool sec_ch_above = 0;
 	uint32_t reg;
 
+	/* unit: 256us. 256ms */
+	rtwn_write_2(sc, R92F_PKT_VO_VI_LIFE_TIME, 0x0400);
+	/* unit: 256us. 256ms */
+	rtwn_write_2(sc, R92F_PKT_BE_BK_LIFE_TIME, 0x0400);
+
 	r92f_set_txpower(sc, c);
 
 	chan = rtwn_chan2centieee(c);	
