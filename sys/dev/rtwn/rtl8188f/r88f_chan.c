@@ -47,25 +47,6 @@
 #include <dev/rtwn/rtl8188f/r88f.h>
 #include <dev/rtwn/rtl8188f/r88f_reg.h>
 
-static int
-rtwn_chan2group(int chan)
-{
-	int group;
-
-	if (chan <= 2)
-		group = 0;
-	else if (chan <= 5)
-		group = 1;
-	else if (chan <= 8)
-		group = 2;
-	else if (chan <= 11)
-		group = 3;
-	else
-		group = 4;
-
-	return (group);
-}
-
 void
 r88f_get_txpower(struct rtwn_softc *sc, int chain,
     struct ieee80211_channel *c, uint8_t power[RTWN_RIDX_COUNT])

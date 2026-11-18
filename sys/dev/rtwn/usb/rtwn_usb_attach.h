@@ -20,6 +20,7 @@
 
 void	r92cu_attach(struct rtwn_usb_softc *);
 void	r92eu_attach(struct rtwn_usb_softc *);
+void	r92fu_attach(struct rtwn_usb_softc *);
 void	r88eu_attach(struct rtwn_usb_softc *);
 void	r88fu_attach(struct rtwn_usb_softc *);
 void	r23bu_attach(struct rtwn_usb_softc *);
@@ -29,6 +30,7 @@ void	r21au_attach(struct rtwn_usb_softc *);
 enum {
 	RTWN_CHIP_RTL8192CU,
 	RTWN_CHIP_RTL8192EU,
+	RTWN_CHIP_RTL8192FU,
 	RTWN_CHIP_RTL8188EU,
 	RTWN_CHIP_RTL8188FU,
 	RTWN_CHIP_RTL8723BU,
@@ -118,6 +120,14 @@ static const STRUCT_USB_HOST_ID rtwn_devs[] = {
 	RTWN_RTL8192EU_DEV(TPLINK,		WN823NV2),
 #undef RTWN_RTL8192EU_DEV
 
+	/* RTL8192FU */
+#define RTWN_RTL8192FU_DEV(v,p) \
+	{ USB_VPI(USB_VENDOR_##v, USB_PRODUCT_##v##_##p, \
+	  RTWN_USB_DEVINFO(RTWN_CHIP_RTL8192FU, 0)) }
+	RTWN_RTL8192FU_DEV(DLINK,		RTL8192FU),
+	RTWN_RTL8192FU_DEV(REALTEK,		RTL8192FU),
+#undef RTWN_RTL8192FU_DEV
+
 	/* RTL8188EU */
 #define RTWN_RTL8188EU_DEV(v,p) \
 	{ USB_VPI(USB_VENDOR_##v, USB_PRODUCT_##v##_##p, \
@@ -204,6 +214,7 @@ typedef void	(*chip_usb_attach)(struct rtwn_usb_softc *);
 static const chip_usb_attach rtwn_chip_usb_attach[RTWN_CHIP_MAX_USB] = {
 	[RTWN_CHIP_RTL8192CU] = r92cu_attach,
 	[RTWN_CHIP_RTL8192EU] = r92eu_attach,
+	[RTWN_CHIP_RTL8192FU] = r92fu_attach,
 	[RTWN_CHIP_RTL8188EU] = r88eu_attach,
 	[RTWN_CHIP_RTL8188FU] = r88fu_attach,
 	[RTWN_CHIP_RTL8723BU] = r23bu_attach,

@@ -45,6 +45,7 @@
 #include <dev/rtwn/if_rtwnreg.h>
 #include <dev/rtwn/if_rtwnvar.h>
 #include <dev/rtwn/if_rtwn_nop.h>
+#include <dev/rtwn/if_rtwn_fw.h>
 
 #include <dev/rtwn/pci/rtwn_pci_var.h>
 
@@ -194,6 +195,7 @@ r88ee_attach(struct rtwn_pci_softc *pc)
 	sc->sc_init_rf			= r92c_init_rf;
 	sc->sc_init_antsel		= rtwn_nop_softc;
 	sc->sc_post_init		= r88ee_post_init;
+	sc->sc_set_qmap			= r92ce_set_qmap;
 	sc->sc_init_bcnq1_boundary	= rtwn_nop_int_softc;
 	sc->sc_set_tx_power		= r92c_set_tx_power;
 
@@ -208,6 +210,7 @@ r88ee_attach(struct rtwn_pci_softc *pc)
 	sc->name			= "RTL8188EE";
 	sc->fwname			= "rtwn-rtl8188eefw";
 	sc->fwsig			= 0x88e;
+	sc->fw_start_addr		= R92C_FW_START_ADDR;
 
 	sc->page_count			= R88EE_TX_PAGE_COUNT;
 	sc->pktbuf_count		= R88E_TXPKTBUF_COUNT;

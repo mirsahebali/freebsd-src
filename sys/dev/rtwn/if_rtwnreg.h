@@ -168,4 +168,32 @@ rtwn_chan2centieee(const struct ieee80211_channel *c)
 	return (chan);
 }
 
+static __inline int
+rtwn_chan2group(int chan)
+{
+	int group;
+
+	if (chan <= 2)
+		group = 0;
+	else if (chan <= 5)
+		group = 1;
+	else if (chan <= 8)
+		group = 2;
+	else if (chan <= 11)
+		group = 3;
+	else
+		group = 4;
+
+	return (group);
+}
+
+static __inline int
+rtwn_chan2cckgroup(int chan)
+{
+	if (chan == 14)
+		return (5);
+	else
+		return (rtwn_chan2group(chan));
+}
+
 #endif	/* IF_RTWNREG_H */

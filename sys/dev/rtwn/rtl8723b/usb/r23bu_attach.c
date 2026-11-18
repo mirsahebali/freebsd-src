@@ -28,6 +28,7 @@
 #include <dev/rtwn/if_rtwnreg.h>
 #include <dev/rtwn/if_rtwnvar.h>
 #include <dev/rtwn/if_rtwn_nop.h>
+#include <dev/rtwn/if_rtwn_fw.h>
 
 #include <dev/rtwn/usb/rtwn_usb_var.h>
 
@@ -152,6 +153,7 @@ r23bu_attach(struct rtwn_usb_softc *uc)
 	sc->sc_init_rf			= r23b_init_rf;
 	sc->sc_init_antsel		= r23b_init_antsel;
 	sc->sc_post_init		= r23b_post_init;
+	sc->sc_set_qmap			= r92cu_set_qmap;
 	sc->sc_init_bcnq1_boundary	= rtwn_nop_int_softc;
 	sc->sc_set_tx_power		= r92e_set_tx_power;
 
@@ -166,6 +168,7 @@ r23bu_attach(struct rtwn_usb_softc *uc)
 	sc->name			= "RTL8723BU";
 	sc->fwname			= "rtwn-rtl8723bufw";
 	sc->fwsig			= 0x530;
+	sc->fw_start_addr		= R92C_FW_START_ADDR;
 
 	sc->page_count			= R23B_TX_PAGE_COUNT;
 	sc->pktbuf_count		= 0;			/* Unused */

@@ -1,0 +1,90 @@
+/*
+ * Copyright (c) 2026 Mir Saheb Ali <mirsahebali@pm.me>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
+#ifndef R92F_REG_H
+#define R92F_REG_H
+
+#define R92F_RFE_OPT			0x0920
+#define R92F_DPDT_CTRL			0x092c
+#define R92F_RFE_CTRL_ANT_SRC(idx)	(0x0930 + (idx * 4))
+#define R92F_RFE_PATH_SELECT		0x0940
+#define R92F_RFE_BUFFER			0x0944
+#define R92F_RFE_OPT62			0x0968
+#define R92F_ANAPWR1			0x0d94
+#define R92F_NP_ANTA			0x0e20
+#define R92F_TAP_UPD_97F		0x0e24
+#define R92F_IQK_RPT_TXA		0x0e98
+#define R92F_IQK_RPT_RXA		0x0ea8
+#define R92F_IQK_RPT_TXB		0x0eb8
+#define R92F_IQK_RPT_RXB		0x0ec8
+#define R92F_RF_GAIN_P1			0x35
+#define R92F_RF_TXMOD			0x58
+#define R92F_PKT_VO_VI_LIFE_TIME	0x04c0
+#define R92F_PKT_BE_BK_LIFE_TIME	0x04c2
+
+#define R92F_DATA_SUBCHANNEL		0x0483
+#define R92F_RX_DFIR_MOD_97F		0x0948
+#define R92F_CCK0_TX_FILTER1		0x0a20
+#define R92F_CCK0_TX_FILTER2		0x0a24
+#define R92F_CCK0_DEBUG_PORT		0x0a28
+#define R92F_CCK0_TX_FILTER3		0x0aac
+#define R92F_DOWNSAM_FACTOR		0x0c10
+#define R92F_ANTDIV_PARA1		0x0ca4
+#define R92F_TAP_UPD_97F			0x0e24
+
+#define R92F_RF_CHNLBW_BW_MASK			0x00000c00
+#define R92F_RF_GAIN_CTRL		0xf5
+
+#define R92F_SW_GPIO_SHARE_CTRL(idx)	(0x1038 + (idx * 4))
+#define R92F_LED_GPIO_ENABLE	0x1
+
+#define R92F_AFE_MISC_WL_XTAL_CTRL	0x40
+#define R92F_GPIO_INTM_EDGE_TRIG_IRQ	0x200
+
+#define R92F_GPIO_IO_SEL_2		0x0062
+#define R92F_GPIO_IO_SEL_2_GPIO09_IRQ	0x200
+#define R92F_GPIO_IO_SEL_2_GPIO09_INPUT	0x002
+
+/* Enable GPIO[9] as WiFi RF HW powerdown source */
+#define  R92F_MULTI_WIFI_HW_ROF_EN	0x8
+
+#define R92F_RSVD_1			0x0097
+#define R92F_RSVD_4			0x00dc
+
+#define R92F_GPIO_A0			0x1050
+#define R92F_GPIO_B0			0x105b
+
+#define R92F_LED_MODE_SW_CTRL		0x0
+
+#define R92F_LEDCFG0_LED2EN_M	0x00200000
+#define R92F_LEDCFG0_LED2EN_S	21
+
+#define R92F_LEDCFG0_LED0_IO_MODE_M	0x80
+#define R92F_LEDCFG0_LED0_IO_MODE_S	7
+
+#define R92F_LEDCFG0_LED1_IO_MODE_M	0x8000
+#define R92F_LEDCFG0_LED1_IO_MODE_S	15
+
+#define R92F_LEDCFG0_LED0CM_M	0x7
+#define R92F_LEDCFG0_LED0CM_S	0
+
+#define R92F_LEDCFG0_LED1CM_M	0x700
+#define R92F_LEDCFG0_LED1CM_S	8
+
+#define R92F_LEDCFG0_LED0SV_M	0x8
+#define R92F_LEDCFG0_LED0SV_S	3
+
+#define R92F_LEDCFG0_LED1SV_M	0x800
+#define R92F_LEDCFG0_LED1SV_S	11
+
+#define R92F_LED_SW_OFF			0x0
+#define R92F_LED_SW_ON			0x1
+
+#define R92F_LED_MODE_TX_OR_RX_EVENTS	0x3
+#define R92F_LED_IO_MODE_OUTPUT		0x0
+#define R92F_FPGA0_RFMOD_CCK	0x1000000
+
+#endif /* R92F_REG_H */
