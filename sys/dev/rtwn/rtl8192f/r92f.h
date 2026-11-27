@@ -29,6 +29,9 @@
  * Function declarations.
  */
 
+/* r92f_beacon.c */
+void	r92f_beacon_init(struct rtwn_softc *, void *, int);
+
 /* r92f_calib.c */
 void	r92f_lc_calib(struct rtwn_softc *);
 void	r92f_iq_calib(struct rtwn_softc *);
@@ -53,10 +56,14 @@ void	r92f_get_rx_stats(struct rtwn_softc *, struct ieee80211_rx_stats *,
 void	r92f_tx_setup_macid(void *, int);
 void	r92f_fill_tx_desc(struct rtwn_softc *, struct ieee80211_node *,
     struct mbuf *, void *, uint8_t, bool, int);
+void	r92f_fill_tx_desc_raw(struct rtwn_softc *, struct ieee80211_node *,
+    struct mbuf *, void *, const struct ieee80211_bpf_params *);
+void	r92f_fill_tx_desc_null(struct rtwn_softc *, void *, int, int, int);
 
 /* r92f_fw.c */
 void	r92f_fw_reset(struct rtwn_softc *, int);
 void	r92f_fw_download_enable(struct rtwn_softc *, int);
+int	r92f_fw_write_finish(struct rtwn_softc *);
 
 /* r92f_led.c */
 void	r92f_set_led(struct rtwn_softc *, int, int);

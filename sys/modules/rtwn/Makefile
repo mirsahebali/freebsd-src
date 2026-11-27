@@ -29,8 +29,8 @@ SRCS	+= r88f.h r88f_calib.c r88f_chan.c r88f_fw.c r88f_init.c \
 
 .PATH:	   ${SRCTOP}/sys/dev/rtwn/rtl8192f
 SRCS	+= r92f_calib.c r92f_fw.c r92f_led.c r92f_reg.h r92f_rom_defs.h \
-	   r92f_rom.c r92f_rx.c r92f_tx.c r92f.h r92f_chan.c r92f_init.c r92f_priv.h \
-	   r92f_rom_image.h r92f_rx_desc.h r92f_var.h
+	   r92f_rom.c r92f_rx.c r92f_tx.c r92f.h r92f_chan.c r92f_init.c \
+	   r92f_priv.h r92f_rom_image.h r92f_rx_desc.h r92f_var.h r92f_beacon.c
 
 .PATH:	   ${SRCTOP}/sys/dev/rtwn/rtl8192e
 SRCS	+= r92e_chan.c r92e_fw.c r92e_init.c r92e_led.c r92e_rf.c \

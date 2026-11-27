@@ -75,7 +75,11 @@ r92f_set_crystal_cap(struct rtwn_softc *sc)
 static void
 r92f_init_bb_common(struct rtwn_softc *sc)
 {
+	struct r92f_softc *rs = sc->sc_priv;
+
 	r92c_init_bb_common(sc);
+
+	rs->cck_new_agc = (rtwn_bb_read(sc, 0xa9c) & (1u << 17)) != 0;
 
 	/* these values are taken out from rtl8192fu_agc_vals as they write
 	to 0xc50 instead of 0xc78 */

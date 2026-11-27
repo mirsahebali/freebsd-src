@@ -3012,6 +3012,7 @@ dev/rtwn/rtl8192e/usb/r92eu_attach.c	optional rtwn_usb
 dev/rtwn/rtl8192e/usb/r92eu_init.c	optional rtwn_usb
 
 # RTL8192F
+dev/rtwn/rtl8192f/r92f_beacon.c optional rtwn
 dev/rtwn/rtl8192f/r92f_calib.c  optional rtwn
 dev/rtwn/rtl8192f/r92f_chan.c   optional rtwn
 dev/rtwn/rtl8192f/r92f_fw.c optional rtwn

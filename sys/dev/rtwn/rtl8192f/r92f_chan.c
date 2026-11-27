@@ -52,6 +52,15 @@
 #include <dev/rtwn/rtl8192f/r92f_reg.h>
 #include <dev/rtwn/rtl8192f/r92f_var.h>
 
+static int
+r92f_chan2cckgroup(int chan)
+{
+	if (chan == 14)
+		return (5);
+	else
+		return (r88f_chan2group(chan));
+}
+
 static void
 r92f_get_txpower(struct rtwn_softc *sc, int chain, struct ieee80211_channel *c,
     uint8_t power[RTWN_RIDX_COUNT])
@@ -61,13 +70,9 @@ r92f_get_txpower(struct rtwn_softc *sc, int chain, struct ieee80211_channel *c,
 	int i, ridx, group, cck_group, max_mcs, chan;
 
 	/* Determine channel group. */
-	if (IEEE80211_IS_CHAN_HT40(c)) {
-		chan = c->ic_ieee;
-	} else {
-		chan = rtwn_chan2centieee(c);
-	}
-	group = rtwn_chan2group(chan);
-	cck_group = rtwn_chan2cckgroup(chan);
+	chan = rtwn_chan2centieee(c);
+	group = r88f_chan2group(chan);
+	cck_group = r92f_chan2cckgroup(chan);
 	if (group == -1 || cck_group == -1) {	/* shouldn't happen */
 		device_printf(sc->sc_dev, "%s: incorrect channel\n", __func__);
 		return;
@@ -107,8 +112,7 @@ r92f_get_txpower(struct rtwn_softc *sc, int chain, struct ieee80211_channel *c,
 			pwr_diff = rs->bw20_tx_pwr_diff_2g[chain][i];
 
 		min_mcs = RTWN_RIDX_HT_MCS(i * 8);
-		for (ridx = min_mcs; ridx < min_mcs + 8 && ridx <= max_mcs;
-		    ridx++) {
+		for (ridx = min_mcs; ridx <= min_mcs; ridx++) {
 			/* Ensure we don't underflow */
 			pwr = power[ridx] + pwr_diff;
 			if (pwr < 0)
@@ -159,12 +163,17 @@ r92f_set_tx_power(struct rtwn_softc *sc, struct ieee80211vap *vap)
 static void
 r92f_config_kfree(struct rtwn_softc *sc, uint8_t chan)
 {
-	uint8_t bb_gain[3] = { 0xff, 0xff, 0xff }; /* EFUSE_UNDEFINED = 0xff */
+	struct r92f_softc *rs = sc->sc_priv;
+
+	const uint8_t *bb_gain = rs->bb_gain;
 	uint8_t bb_gain_path_mask[2] = { 0x0f, 0xf0 };
 	uint8_t bb_gain_path_shift[2] = { 0, 4 };
 	int rfpath; /* RF_A or RF_B */
 	uint8_t bb_gain_for_path;
 	uint8_t channel_idx = 0;
+
+	if (bb_gain[1] == 0xff)
+		return;
 
 	if (chan >= 1 && chan <= 3)
 		channel_idx = 0;
@@ -172,19 +181,6 @@ r92f_config_kfree(struct rtwn_softc *sc, uint8_t chan)
 		channel_idx = 1;
 	if (chan >= 10 && chan <= 14)
 		channel_idx = 2;
-
-	r88f_read_efuse_1(sc, 0x1ee, &bb_gain[1]);
-	r88f_read_efuse_1(sc, 0x1ec, &bb_gain[0]);
-	r88f_read_efuse_1(sc, 0x1ea, &bb_gain[2]);
-
-	if (bb_gain[1] == 0xff)
-		return;
-
-	if (bb_gain[0] == 0xff)
-		bb_gain[0] = bb_gain[1];
-
-	if (bb_gain[2] == 0xff)
-		bb_gain[2] = bb_gain[1];
 
 	for (rfpath = 0; rfpath < 2; rfpath++) {
 		/* power_trim based on 55[19:14] */
@@ -281,7 +277,8 @@ r92f_set_chan(struct rtwn_softc *sc, struct ieee80211_channel *c)
 	reg &= ~(0x60000); /* select the 2.4G band(?) */
 	reg = (reg & ~0xff) | (chan & 0xff);
 	rtwn_rf_write(sc, 0, R92C_RF_CHNLBW, reg);
-	rtwn_rf_write(sc, 1, R92C_RF_CHNLBW, reg);
+	if (sc->nrxchains > 1)
+		rtwn_rf_write(sc, 1, R92C_RF_CHNLBW, reg);
 
 	r92f_config_kfree(sc, chan);
 
@@ -319,7 +316,8 @@ r92f_set_chan(struct rtwn_softc *sc, struct ieee80211_channel *c)
 	else
 		reg |= R88F_RF_CHNLBW_BW20;
 	rtwn_rf_write(sc, 0, R92C_RF_CHNLBW, reg);
-	rtwn_rf_write(sc, 1, R92C_RF_CHNLBW, reg);
+	if (sc->nrxchains > 1)
+		rtwn_rf_write(sc, 1, R92C_RF_CHNLBW, reg);
 
 	/* Modify RX DFIR parameters */
 	rtwn_bb_setbits(sc, R92F_TAP_UPD_97F, 0x300000, 0x200000);

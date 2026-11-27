@@ -49,14 +49,11 @@
 
 #include <dev/rtwn/usb/rtwn_usb_var.h>
 
-#include <dev/rtwn/rtl8188e/r88e_priv.h>
 #include <dev/rtwn/rtl8188e/r88e_rom_image.h>	/* for 'macaddr' field */
 #include <dev/rtwn/rtl8188e/usb/r88eu.h>
 
 #include <dev/rtwn/rtl8192c/r92c_reg.h>
-#include <dev/rtwn/rtl8192c/r92c_var.h>
 #include <dev/rtwn/rtl8192c/usb/r92cu.h>
-#include <dev/rtwn/rtl8192c/usb/r92cu_tx_desc.h>
 
 #include <dev/rtwn/rtl8192e/r92e.h>
 
@@ -68,16 +65,11 @@
 #include <dev/rtwn/rtl8812a/usb/r12au_tx_desc.h>
 
 #include <dev/rtwn/rtl8188f/r88f.h>
-#include <dev/rtwn/rtl8188f/r88f_priv.h>
-#include <dev/rtwn/rtl8188f/r88f_reg.h>
-#include <dev/rtwn/rtl8188f/r88f_rom_defs.h>
-#include <dev/rtwn/rtl8188f/r88f_rom_image.h>
-#include <dev/rtwn/rtl8188f/usb/r88fu.h>
 
 #include <dev/rtwn/rtl8192f/r92f.h>
-#include <dev/rtwn/rtl8192f/usb/r92fu.h>
-#include <dev/rtwn/rtl8192f/r92f_var.h>
 #include <dev/rtwn/rtl8192f/r92f_priv.h>
+#include <dev/rtwn/rtl8192f/r92f_var.h>
+#include <dev/rtwn/rtl8192f/usb/r92fu.h>
 
 void	r92fu_attach(struct rtwn_usb_softc *);
 
@@ -97,7 +89,6 @@ r92fu_attach_private(struct rtwn_softc *sc)
 	sc->sc_priv = rs;
 }
 
-// XXX: move this somewhere else?
 static void
 r92fu_enable_mac_txrx(struct rtwn_softc *sc)
 {
@@ -122,8 +113,8 @@ r92fu_attach(struct rtwn_usb_softc *uc)
 
 	sc->sc_set_chan			= r92f_set_chan;
 	sc->sc_fill_tx_desc		= r92f_fill_tx_desc;
-	sc->sc_fill_tx_desc_raw		= r12a_fill_tx_desc_raw;
-	sc->sc_fill_tx_desc_null	= r12a_fill_tx_desc_null;
+	sc->sc_fill_tx_desc_raw		= r92f_fill_tx_desc_raw;
+	sc->sc_fill_tx_desc_null	= r92f_fill_tx_desc_null;
 	sc->sc_dump_tx_desc		= r12au_dump_tx_desc;
 	sc->sc_tx_radiotap_flags	= r12a_tx_radiotap_flags;
 	sc->sc_rx_radiotap_flags	= r12a_rx_radiotap_flags;
@@ -136,10 +127,10 @@ r92fu_attach(struct rtwn_usb_softc *uc)
 	sc->sc_handle_c2h_report	= r92e_handle_c2h_report;
 	sc->sc_check_frame		= rtwn_nop_int_softc_mbuf;
 	sc->sc_rf_read			= r92c_rf_read;
-	sc->sc_rf_write			= r92c_rf_write;
+	sc->sc_rf_write			= r88e_rf_write;
 	sc->sc_check_condition		= r92c_check_condition;
 	sc->sc_efuse_postread		= rtwn_nop_softc;
-	sc->sc_efuse_preread		= rtwn_nop_int_softc;
+	sc->sc_efuse_preread		= r88f_efuse_preread;
 	sc->sc_parse_rom		= r92f_parse_rom;
 	sc->sc_set_led			= r92f_set_led;
 	sc->sc_power_on			= r92fu_power_on;
@@ -147,8 +138,9 @@ r92fu_attach(struct rtwn_usb_softc *uc)
 #ifndef RTWN_WITHOUT_UCODE
 	sc->sc_fw_reset			= r92f_fw_reset;
 	sc->sc_fw_download_enable	= r92f_fw_download_enable;
+	sc->sc_fw_write_finish		= r92f_fw_write_finish;
 #endif
-	sc->sc_llt_init			= r92c_llt_init;
+	sc->sc_llt_init			= r92e_llt_init;
 	sc->sc_enable_mac_txrx		= r92fu_enable_mac_txrx;
 	sc->sc_set_page_size		= r88f_set_page_size;
 	sc->sc_lc_calib			= r92f_lc_calib;
@@ -164,7 +156,7 @@ r92fu_attach(struct rtwn_usb_softc *uc)
 	sc->sc_set_pwrmode		= r88e_set_pwrmode;
 	sc->sc_set_rssi			= rtwn_nop_softc;	/* XXX TODO? */
 #endif
-	sc->sc_beacon_init		= r12a_beacon_init;
+	sc->sc_beacon_init		= r92f_beacon_init;
 	sc->sc_beacon_enable		= r92c_beacon_enable;
 	sc->sc_sta_beacon_enable	= r92c_sta_beacon_enable;
 	sc->sc_beacon_set_rate		= rtwn_nop_void_int;
@@ -209,8 +201,8 @@ r92fu_attach(struct rtwn_usb_softc *uc)
 	sc->pktbuf_count		= R92F_TXPKTBUF_COUNT;
 
 	sc->txdesc_len			= sizeof(struct r12au_tx_desc);
-	sc->efuse_maxlen		= R88E_EFUSE_MAX_LEN;
-	sc->efuse_maplen		= R88E_EFUSE_MAP_LEN;
+	sc->efuse_maxlen		= R92F_EFUSE_MAP_LEN;
+	sc->efuse_maplen		= R92F_EFUSE_MAP_LEN;
 	sc->rx_dma_size			= R92F_RX_DMA_BUFFER_SIZE;
 
 	sc->macid_limit			= R92F_MACID_MAX + 1;

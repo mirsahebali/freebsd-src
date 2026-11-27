@@ -46,7 +46,7 @@ r92f_set_led(struct rtwn_softc *sc, int led, int on)
 	rtwn_bb_write(sc, R92F_SW_GPIO_SHARE_CTRL(0), 0x20080);
 	rtwn_bb_write(sc, R92F_SW_GPIO_SHARE_CTRL(1), 0x1b0000);
 
-	ledcfg = rtwn_bb_read(sc, R92C_LEDCFG0);
+	ledcfg = rtwn_read_4(sc, R92C_LEDCFG0);
 
 	/* Comfast CF-826F uses LED1. Asus USB-N13 C1 uses LED0. Set both. */
 	ledcfg = RW(ledcfg, R92F_LEDCFG0_LED2EN, R92F_LED_GPIO_ENABLE);
@@ -65,7 +65,7 @@ r92f_set_led(struct rtwn_softc *sc, int led, int on)
 			ledcfg = RW(ledcfg, R92F_LEDCFG0_LED1CM, R92F_LED_MODE_SW_CTRL);
 			ledcfg = RW(ledcfg, R92F_LEDCFG0_LED1SV, R92F_LED_SW_ON);
 		}
-		rtwn_write_1(sc, R92C_LEDCFG2, ledcfg);
+		rtwn_write_4(sc, R92C_LEDCFG0, ledcfg);
 		sc->ledlink = on;	/* Save LED state. */
 	}
 

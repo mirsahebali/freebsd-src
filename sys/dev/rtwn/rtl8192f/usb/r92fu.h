@@ -7,6 +7,8 @@
 #ifndef RTL8192FU_H
 #define RTL8192FU_H
 
+#define R92F_EFUSE_MAP_LEN	512
+
 #include <dev/rtwn/rtl8192f/r92f.h>
 
 /*
