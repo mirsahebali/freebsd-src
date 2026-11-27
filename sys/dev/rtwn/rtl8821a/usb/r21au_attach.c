@@ -55,6 +55,7 @@
 #include <dev/rtwn/usb/rtwn_usb_var.h>
 
 #include <dev/rtwn/rtl8192c/r92c.h>
+#include <dev/rtwn/rtl8192c/usb/r92cu.h>
 
 #include <dev/rtwn/rtl8188e/r88e.h>
 
@@ -185,6 +186,7 @@ r21au_attach(struct rtwn_usb_softc *uc)
 
 	/* USB part. */
 	uc->uc_align_rx			= r12au_align_rx;
+	uc->uc_tx_checksum		= r92cu_tx_checksum;
 	uc->tx_agg_desc_num		= 6;
 
 	/* Common part. */

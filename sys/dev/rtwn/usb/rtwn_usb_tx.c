@@ -266,13 +266,6 @@ rtwn_bulk_tx_callback_vo(struct usb_xfer *xfer, usb_error_t error)
 	rtwn_bulk_tx_callback_qid(xfer, error, RTWN_BULK_TX_VO);
 }
 
-static void
-rtwn_usb_tx_checksum(struct rtwn_tx_desc_common *txd)
-{
-	txd->txdw7.usb_checksum = 0;
-	txd->txdw7.usb_checksum = rtwn_usb_calc_tx_checksum(txd);
-}
-
 int
 rtwn_usb_tx_start(struct rtwn_softc *sc, struct ieee80211_node *ni,
     struct mbuf *m, uint8_t *tx_desc, uint8_t type, int id)
@@ -314,8 +307,8 @@ rtwn_usb_tx_start(struct rtwn_softc *sc, struct ieee80211_node *ni,
 	txd = (struct rtwn_tx_desc_common *)tx_desc;
 	txd->pktlen = htole16(m->m_pkthdr.len);
 	txd->offset = sc->txdesc_len;
-	txd->flags0 |= RTWN_FLAGS0_OWN;
-	rtwn_usb_tx_checksum(txd);
+
+	rtwn_usb_tx_checksum(uc, txd);
 
 	/* Dump Tx descriptor. */
 	rtwn_dump_tx_desc(sc, tx_desc);

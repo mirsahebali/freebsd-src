@@ -38,8 +38,16 @@
 #include <net80211/ieee80211_var.h>
 #include <net80211/ieee80211_radiotap.h>
 
+#include <dev/usb/usb.h>
+#include <dev/usb/usbdi.h>
+
 #include <dev/rtwn/if_rtwnvar.h>
 #include <dev/rtwn/if_rtwn_debug.h>
+
+#include <dev/rtwn/if_rtwnreg.h>
+
+#include <dev/rtwn/usb/rtwn_usb_tx.h>
+#include <dev/rtwn/usb/rtwn_usb_reg.h>
 
 #include <dev/rtwn/rtl8192c/usb/r92cu.h>
 #include <dev/rtwn/rtl8192c/usb/r92cu_tx_desc.h>
@@ -58,4 +66,12 @@ r92cu_dump_tx_desc(struct rtwn_softc *sc, const void *desc)
 	    le16toh(txd->txdseq), le32toh(txd->txdw4), le32toh(txd->txdw5),
 	    le32toh(txd->txdw6), le16toh(txd->txdsum), le16toh(txd->pad));
 #endif
+}
+
+void
+r92cu_tx_checksum(struct rtwn_tx_desc_common *txd)
+{
+	txd->flags0 |= RTWN_FLAGS0_OWN;
+	txd->txdw7.usb_checksum = 0;
+	txd->txdw7.usb_checksum = rtwn_usb_calc_tx_checksum(txd);
 }
