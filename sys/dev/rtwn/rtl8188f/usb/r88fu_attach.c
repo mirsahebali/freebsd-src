@@ -175,6 +175,7 @@ r88fu_attach(struct rtwn_usb_softc *uc)
 #ifndef RTWN_WITHOUT_UCODE
 	sc->sc_fw_reset			= r88f_fw_reset;
 	sc->sc_fw_download_enable	= r88f_fw_download_enable;
+	sc->sc_fw_write_finish		= rtwn_nop_int_softc;
 #endif
 	sc->sc_llt_init			= r88f_llt_init;
 	sc->sc_enable_mac_txrx		= r88fu_enable_mac_txrx;

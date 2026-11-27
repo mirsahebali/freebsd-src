@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Mir Saheb Ali <mirsahebali@pm.me>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #ifndef R92F_ROM_IMAGE_H
 #define R92F_ROM_IMAGE_H
 

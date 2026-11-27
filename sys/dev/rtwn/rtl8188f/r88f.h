@@ -50,6 +50,7 @@ void	r88f_iq_calib(struct rtwn_softc *);
 void	r88f_set_chan(struct rtwn_softc *, struct ieee80211_channel *);
 void	r88f_get_txpower(struct rtwn_softc *, int, struct ieee80211_channel *,
 		      uint8_t[RTWN_RIDX_COUNT]);
+int	r88f_chan2group(int);
 
 /* r88f_fw.c */
 void	r88f_fw_reset(struct rtwn_softc *, int);

@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Mir Saheb Ali <mirsahebali@pm.me>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #include <sys/cdefs.h>
 #include "opt_wlan.h"
 
@@ -41,8 +47,11 @@ r92f_tx_setup_macid(void *buf, int id)
 {
 	struct r12a_tx_desc *txd = buf;
 	
+	txd->txdw1 &= htole32(~R92F_TXDW1_MACID_M);
 	txd->txdw1 |= htole32(SM(R92F_TXDW1_MACID, id));
 }
+#define R92F_TXDW5_PATH_A_EN 0x01000000
+#define R92F_TXDW5_PATH_B_EN 0x02000000
 
 void
 r92f_fill_tx_desc(struct rtwn_softc *sc, struct ieee80211_node *ni,
@@ -61,6 +70,10 @@ r92f_fill_tx_desc(struct rtwn_softc *sc, struct ieee80211_node *ni,
 		macid = 0;
 
 	r12a_fill_tx_desc(sc, ni, m, buf, ridx, force_rate, maxretry);
+	
+	/* Vendor does this for some reason */
+	txd->txdw5 |= htole32(R92F_TXDW5_PATH_A_EN
+	    | ((sc->ntxchains > 1) ? R92F_TXDW5_PATH_B_EN : 0));
 
 	if (IEEE80211_IS_MULTICAST(mtod(m, struct ieee80211_frame *)->i_addr1))
 		macid = RTWN_MACID_BC;
@@ -69,3 +82,30 @@ r92f_fill_tx_desc(struct rtwn_softc *sc, struct ieee80211_node *ni,
 	txd->txdw1 &= htole32(~R92F_TXDW1_MACID_M);
 	txd->txdw1 |= htole32(SM(R92F_TXDW1_MACID, macid));
 }
+
+void
+r92f_fill_tx_desc_raw(struct rtwn_softc *sc, struct ieee80211_node *ni,
+    struct mbuf *m, void *buf, const struct ieee80211_bpf_params *params)
+{
+	struct r12a_tx_desc *txd;
+
+	txd = (struct r12a_tx_desc *)buf;
+
+	r12a_fill_tx_desc_raw(sc, ni, m, buf, params);
+
+	txd->flags0 &= ~(R12A_FLAGS0_LSG | R12A_FLAGS0_FSG);
+}
+
+void
+r92f_fill_tx_desc_null(struct rtwn_softc *sc, void *buf, int is11b, int qos,
+    int id)
+{
+	struct r12a_tx_desc *txd;
+
+	txd = (struct r12a_tx_desc *)buf;
+
+	r12a_fill_tx_desc_null(sc, buf, is11b, qos, id);
+
+	txd->flags0 &= ~(R12A_FLAGS0_LSG | R12A_FLAGS0_FSG);
+}
+

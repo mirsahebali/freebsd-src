@@ -80,7 +80,6 @@ static void	rtwn_pci_reset_lists(struct rtwn_softc *,
 		    struct ieee80211vap *);
 static int	rtwn_pci_fw_write_block(struct rtwn_softc *,
 		    const uint8_t *, uint16_t, int);
-static uint16_t	rtwn_pci_get_qmap(struct rtwn_softc *);
 static void	rtwn_pci_set_desc_addr(struct rtwn_softc *);
 static void	rtwn_pci_beacon_update_begin(struct rtwn_softc *,
 		    struct ieee80211vap *);
@@ -497,16 +496,6 @@ rtwn_pci_fw_write_block(struct rtwn_softc *sc, const uint8_t *buf,
 
 	/* NB: cannot fail */
 	return (0);
-}
-
-static uint16_t
-rtwn_pci_get_qmap(struct rtwn_softc *sc)
-{
-	struct rtwn_pci_softc *pc = RTWN_PCI_SOFTC(sc);
-
-	KASSERT(pc->pc_qmap != 0, ("%s: qmap is not set!\n", __func__));
-
-	return (pc->pc_qmap);
 }
 
 static void

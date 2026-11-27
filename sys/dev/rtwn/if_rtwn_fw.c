@@ -215,6 +215,11 @@ rtwn_load_firmware(struct rtwn_softc *sc)
 		error = ETIMEDOUT;
 		goto fail;
 	}
+	
+	error = rtwn_fw_write_finish(sc);
+	if (error)
+		goto fail;
+
 fail:
 	firmware_put(fw, FIRMWARE_UNLOAD);
 	return (error);

@@ -161,6 +161,7 @@ r88ee_attach(struct rtwn_pci_softc *pc)
 #ifndef RTWN_WITHOUT_UCODE
 	sc->sc_fw_reset			= r88e_fw_reset;
 	sc->sc_fw_download_enable	= r88e_fw_download_enable;
+	sc->sc_fw_write_finish		= rtwn_nop_int_softc;
 #endif
 	sc->sc_llt_init			= r92c_llt_init;
 	sc->sc_enable_mac_txrx		= rtwn_nop_softc;

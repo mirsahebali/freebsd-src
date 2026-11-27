@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Mir Saheb Ali <mirsahebali@pm.me>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #include <sys/cdefs.h>
 #include "opt_wlan.h"
 
@@ -82,16 +88,6 @@ r92f_lc_calib(struct rtwn_softc *sc)
 #define R92F_IQK_MAX_RETRIES 2
 #define R92F_RXIQB_EXT 0xca8
 
-struct r92f_iqk_result {
-	int32_t before;
-	int32_t after;
-};
-
-struct r92f_iqk_run_result {
-	int32_t before[R92F_IQK_MAX_PATHS];
-	int32_t after[R92F_IQK_MAX_PATHS];
-};
-
 #define R92F_ADDA_REGS 2
 #define R92F_MAC_REGS 4
 #define R92F_BB_REGS 9
@@ -101,6 +97,11 @@ struct r92f_iqk_regs_vals {
 	uint32_t mac_regs[R92F_MAC_REGS];
 	uint32_t bb_regs[R92F_BB_REGS];
 	uint32_t hssi_param1;
+};
+
+struct r92f_iqk_result {
+	int32_t before;
+	int32_t after;
 };
 
 static const uint32_t iqk_adda_regs[R92F_ADDA_REGS] = {
@@ -179,134 +180,101 @@ r92f_iqk_poll(struct rtwn_softc *sc, uint32_t reg)
 	ktime = 0;
 
 	while (rtwn_bb_read(sc, reg) == 0 && ktime < R92F_IQK_POLL_MAX) {
-		rtwn_delay(sc, R92F_IQK_POLL_STEP);
+		rtwn_delay(sc, R92F_IQK_POLL_STEP * 1000);
 		ktime += R92F_IQK_POLL_STEP;
 	}
 }
 
-static void
-r92f_iqk_pack_run(struct r92f_iqk_run_result *tx_result,
-    struct r92f_iqk_run_result *rx_result, int32_t val[8])
-{
-	val[0] = tx_result->before[PATH_A];
-	val[1] = tx_result->after[PATH_A];
-	val[2] = rx_result->before[PATH_A];
-	val[3] = rx_result->after[PATH_A];
-	val[4] = tx_result->before[PATH_B];
-	val[5] = tx_result->after[PATH_B];
-	val[6] = rx_result->before[PATH_B];
-	val[7] = rx_result->after[PATH_B];
-}
-
-static void
-r92f_iqk_unpack_run(struct r92f_iqk_run_result *tx_result,
-    struct r92f_iqk_run_result *rx_result, int32_t val[8])
-{
-	tx_result->before[PATH_A] = val[0];
-	tx_result->after[PATH_A]  = val[1];
-	rx_result->before[PATH_A] = val[2];
-	rx_result->after[PATH_A]  = val[3];
-	tx_result->before[PATH_B] = val[4];
-	tx_result->after[PATH_B]  = val[5];
-	rx_result->before[PATH_B] = val[6];
-	rx_result->after[PATH_B]  = val[7];
-}
 
 static bool
-r92f_iq_calib_compare_results(struct r92f_iqk_run_result *tx_result1,
-    struct r92f_iqk_run_result *rx_result1,
-    struct r92f_iqk_run_result *tx_result2,
-    struct r92f_iqk_run_result *rx_result2,
-    struct r92f_iqk_run_result *tx_merged,
-    struct r92f_iqk_run_result *rx_merged)
+r92f_iq_calib_compare_results(struct rtwn_softc *sc, int result[][8],
+    int c1, int c2)
 {
-	int32_t v1[8], v2[8], m[8];
-	int32_t *candidate[2] = { 0, 0 };
-	int32_t tmp1, tmp2;
-	uint32_t diff, simubitmap;
+	uint32_t i, j, diff, simubitmap, bound;
+	int candidate[2] = {-1, -1};	/* for path A and path B */
+	int tmp1, tmp2;
 	bool retval = true;
-	int i, j;
 
-	r92f_iqk_pack_run(tx_result1, rx_result1, v1);
-	r92f_iqk_pack_run(tx_result2, rx_result2, v2);
-	r92f_iqk_pack_run(tx_merged, rx_merged, m);
+	if (sc->ntxchains > 1)
+		bound = 8;
+	else
+		bound = 4;
 
 	simubitmap = 0;
 
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < bound; i++) {
 		if (i & 1) {
-			tmp1 = v1[i];
-			if (tmp1 & 0x200)
-				tmp1 |= ~0x3ff;
-			tmp2 = v2[i];
-			if (tmp2 & 0x200)
-				tmp2 |= ~0x3ff;
+			if ((result[c1][i] & 0x00000200))
+				tmp1 = result[c1][i] | 0xfffffc00;
+			else
+				tmp1 = result[c1][i];
+
+			if ((result[c2][i]& 0x00000200))
+				tmp2 = result[c2][i] | 0xfffffc00;
+			else
+				tmp2 = result[c2][i];
 		} else {
-			tmp1 = v1[i];
-			tmp2 = v2[i];
+			tmp1 = result[c1][i];
+			tmp2 = result[c2][i];
 		}
 
 		diff = (tmp1 > tmp2) ? (tmp1 - tmp2) : (tmp2 - tmp1);
 
 		if (diff > R92F_IQK_MAX_TOLERANCE) {
 			if ((i == 2 || i == 6) && !simubitmap) {
-				if (v1[i] + v1[i + 1] == 0)
-					candidate[i / 4] = v2;
-				else if (v2[i] + v2[i + 1] == 0)
-					candidate[i / 4] = v1;
+				if (result[c1][i] + result[c1][i + 1] == 0)
+					candidate[(i / 4)] = c2;
+				else if (result[c2][i] + result[c2][i + 1] == 0)
+					candidate[(i / 4)] = c1;
 				else
-					simubitmap |= (1U << i);
+					simubitmap = simubitmap | (1 << i);
 			} else {
-				simubitmap |= (1U << i);
+				simubitmap = simubitmap | (1 << i);
 			}
 		}
 	}
 
 	if (simubitmap == 0) {
-		for (i = 0; i < 2; i++) {
-			if (candidate[i] != NULL) {
+		for (i = 0; i < (bound / 4); i++) {
+			if (candidate[i] >= 0) {
 				for (j = i * 4; j < (i + 1) * 4 - 2; j++)
-					m[j] = candidate[i][j];
+					result[3][j] = result[candidate[i]][j];
 				retval = false;
 			}
 		}
+		return retval;
 	} else {
-		retval = false;
-
 		if (!(simubitmap & 0x03)) {
 			/* path A TX OK */
 			for (i = 0; i < 2; i++)
-				m[i] = v1[i];
+				result[3][i] = result[c1][i];
 		}
 
 		if (!(simubitmap & 0x0c)) {
 			/* path A RX OK */
 			for (i = 2; i < 4; i++)
-				m[i] = v1[i];
+				result[3][i] = result[c1][i];
 		}
 
-		if (!(simubitmap & 0x30)) {
+		if (!(simubitmap & 0x30) && sc->ntxchains > 1) {
 			/* path B TX OK */
 			for (i = 4; i < 6; i++)
-				m[i] = v1[i];
+				result[3][i] = result[c1][i];
 		}
 
-		if (!(simubitmap & 0xc0)) {
+		if (!(simubitmap & 0xc0) && sc->ntxchains > 1) {
 			/* path B RX OK */
 			for (i = 6; i < 8; i++)
-				m[i] = v1[i];
+				result[3][i] = result[c1][i];
 		}
 	}
 
-	r92f_iqk_unpack_run(tx_merged, rx_merged, m);
-
-	return (retval);
+	return false;
 }
 
 static void
-r92f_fill_iqk_matrix_a(struct rtwn_softc *sc,
-    bool path_ok, const struct r92f_iqk_run_result *tx_result,
-    const struct r92f_iqk_run_result *rx_result, bool tx_only)
+r92f_fill_iqk_matrix_a(struct rtwn_softc *sc, bool path_ok, int result[][8],
+    int candidate, bool tx_only)
 {
 	uint32_t oldval, x, tx0_a, result_reg;
 	int y, tx0_c;
@@ -318,7 +286,7 @@ r92f_fill_iqk_matrix_a(struct rtwn_softc *sc,
 	reg = rtwn_bb_read(sc, R92C_OFDM0_TXIQIMBALANCE(0));
 	oldval = reg >> 22;
 
-	x = tx_result->before[PATH_A];
+	x = result[candidate][0];
 	if ((x & 0x00000200) != 0)
 		x = x | 0xfffffc00;
 	tx0_a = (x * oldval) >> 8;
@@ -334,7 +302,7 @@ r92f_fill_iqk_matrix_a(struct rtwn_softc *sc,
 		reg |= 0x80000000;
 	rtwn_bb_write(sc, R92C_OFDM0_ECCATHRESHOLD, reg);
 
-	y = tx_result->after[PATH_A];
+	y = result[candidate][1];
 	if ((y & 0x00000200) != 0)
 		y |= 0xfffffc00;
 	tx0_c = (y * oldval) >> 8;
@@ -342,10 +310,8 @@ r92f_fill_iqk_matrix_a(struct rtwn_softc *sc,
 	rtwn_bb_setbits(sc, R92C_OFDM0_TXAFE(0), 0xf0000000,
 		 ((tx0_c & 0x3c0) >> 6) << 28);
 
-	reg = rtwn_bb_read(sc, R92C_OFDM0_TXIQIMBALANCE(0));
-	reg &= ~0x003f0000;
-	reg |= ((tx0_a & 0x3f) << 16);
-	rtwn_bb_write(sc, R92C_OFDM0_TXIQIMBALANCE(0), reg);
+	rtwn_bb_setbits(sc, R92C_OFDM0_TXIQIMBALANCE(0), 0x003f0000,
+	    ((tx0_c & 0x3f) << 16));
 
 	reg = rtwn_bb_read(sc, R92C_OFDM0_ECCATHRESHOLD);
 	reg &= ~0x20000000;
@@ -358,23 +324,22 @@ r92f_fill_iqk_matrix_a(struct rtwn_softc *sc,
 		return;
 	}
 
-	result_reg = rx_result->before[PATH_A];
+	result_reg = result[candidate][2];
 	rtwn_bb_setbits(sc, R92C_OFDM0_RXIQIMBALANCE(0), 0x3ff,
 		 result_reg & 0x3ff);
 
-	result_reg = rx_result->after[PATH_A] & 0x3f;
+	result_reg = result[candidate][3] & 0x3f;
 	rtwn_bb_setbits(sc, R92C_OFDM0_RXIQIMBALANCE(0), 0xfc00,
 		 (result_reg << 10) & 0xfc00);
 
-	result_reg = (rx_result->after[PATH_A] >> 6) & 0xf;
+	result_reg = (result[candidate][3] >> 6) & 0xf;
 	rtwn_bb_setbits(sc, R92C_OFDM0_RXIQEXTANTA, 0xf0000000,
 		 result_reg << 28);
 }
 
 static void
-r92f_fill_iqk_matrix_b(struct rtwn_softc *sc,
-    bool path_ok, const struct r92f_iqk_run_result *tx_result,
-    const struct r92f_iqk_run_result *rx_result, bool tx_only)
+r92f_fill_iqk_matrix_b(struct rtwn_softc *sc, bool path_ok, int result[][8],
+    int candidate, bool tx_only)
 {
 	uint32_t oldval, x, tx1_a, result_reg;
 	int y, tx1_c;
@@ -386,23 +351,20 @@ r92f_fill_iqk_matrix_b(struct rtwn_softc *sc,
 	reg = rtwn_bb_read(sc, R92C_OFDM0_TXIQIMBALANCE(1));
 	oldval = reg >> 22;
 
-	x = tx_result->before[PATH_B];
+	x = result[candidate][4];
 	if ((x & 0x00000200) != 0)
 		x = x | 0xfffffc00;
 	tx1_a = (x * oldval) >> 8;
 
-	reg = rtwn_bb_read(sc, R92C_OFDM0_TXIQIMBALANCE(1));
-	reg &= ~0x3ff;
-	reg |= tx1_a;
-	rtwn_bb_write(sc, R92C_OFDM0_TXIQIMBALANCE(1), reg);
+	rtwn_bb_setbits(sc, R92C_OFDM0_TXIQIMBALANCE(1), 0x3ff, tx1_a);
 
 	reg = rtwn_bb_read(sc, R92C_OFDM0_ECCATHRESHOLD);
-	reg &= ~0x80000000;
+	reg &= ~0x8000000;
 	if ((x * oldval >> 7) & 0x1)
-		reg |= 0x80000000;
+		reg |= 0x8000000;
 	rtwn_bb_write(sc, R92C_OFDM0_ECCATHRESHOLD, reg);
 
-	y = tx_result->after[PATH_B];
+	y = result[candidate][5];
 	if ((y & 0x00000200) != 0)
 		y |= 0xfffffc00;
 	tx1_c = (y * oldval) >> 8;
@@ -410,15 +372,13 @@ r92f_fill_iqk_matrix_b(struct rtwn_softc *sc,
 	rtwn_bb_setbits(sc, R92C_OFDM0_TXAFE(1), 0xf0000000,
 		 ((tx1_c & 0x3c0) >> 6) << 28);
 
-	reg = rtwn_bb_read(sc, R92C_OFDM0_TXIQIMBALANCE(1));
-	reg &= ~0x003f0000;
-	reg |= ((tx1_a & 0x3f) << 16);
-	rtwn_bb_write(sc, R92C_OFDM0_TXIQIMBALANCE(1), reg);
+	rtwn_bb_setbits(sc, R92C_OFDM0_TXIQIMBALANCE(1), 0x003f0000,
+	    (tx1_c & 0x3f) << 16);
 
 	reg = rtwn_bb_read(sc, R92C_OFDM0_ECCATHRESHOLD);
-	reg &= ~0x20000000;
+	reg &= ~0x2000000;
 	if ((y * oldval >> 7) & 0x1)
-		reg |= 0x20000000;
+		reg |= 0x2000000;
 	rtwn_bb_write(sc, R92C_OFDM0_ECCATHRESHOLD, reg);
 
 	if (tx_only) {
@@ -426,15 +386,15 @@ r92f_fill_iqk_matrix_b(struct rtwn_softc *sc,
 		return;
 	}
 
-	result_reg = rx_result->before[PATH_B];
+	result_reg = result[candidate][6];
 	rtwn_bb_setbits(sc, R92C_OFDM0_RXIQIMBALANCE(1), 0x3ff,
 		 result_reg & 0x3ff);
 
-	result_reg = rx_result->after[PATH_B] & 0x3f;
+	result_reg = result[candidate][7] & 0x3f;
 	rtwn_bb_setbits(sc, R92C_OFDM0_RXIQIMBALANCE(1), 0xfc00,
 		 (result_reg << 10) & 0xfc00);
 
-	result_reg = (rx_result->after[PATH_B] >> 6) & 0xf;
+	result_reg = (result[candidate][7] >> 6) & 0xf;
 	rtwn_bb_setbits(sc, R92F_RXIQB_EXT, 0x000000f0, result_reg << 4);
 }
 
@@ -482,8 +442,7 @@ r92f_iqk_tx_path_a(struct rtwn_softc *sc)
 	rtwn_bb_write(sc, R92C_IQK_AGC_RSP, 0x00e62911);
 
 	r92f_iqk_one_shot(sc);
-
-	rtwn_delay(sc, 15);
+	rtwn_delay(sc, 15000); /* wait 15ms */
 
 	r92f_iqk_poll(sc, R92F_IQK_RPT_TXA);
 
@@ -556,8 +515,7 @@ r92f_iqk_tx_rx_path_a(struct rtwn_softc *sc)
 	rtwn_bb_write(sc, R92C_IQK_AGC_RSP, 0x0086a911);
 
 	r92f_iqk_one_shot(sc);
-
-	rtwn_delay(sc, 15);
+	rtwn_delay(sc, 15000); /* wait 15ms */
 
 	r92f_iqk_poll(sc, R92F_IQK_RPT_TXA);
 
@@ -611,8 +569,7 @@ r92f_iqk_tx_rx_path_a(struct rtwn_softc *sc)
 	rtwn_bb_write(sc, R92C_IQK_AGC_RSP, 0x0046a8d1);
 
 	r92f_iqk_one_shot(sc);
-
-	rtwn_delay(sc, 15);
+	rtwn_delay(sc, 15000);
 
 	r92f_iqk_poll(sc, R92F_IQK_RPT_RXA);
 
@@ -678,8 +635,7 @@ r92f_iqk_tx_path_b(struct rtwn_softc *sc)
 	rtwn_bb_write(sc, R92C_IQK_AGC_RSP, 0x00e62911);
 
 	r92f_iqk_one_shot(sc);
-
-	rtwn_delay(sc, 15);
+	rtwn_delay(sc, 15000);
 
 	r92f_iqk_poll(sc, R92F_IQK_RPT_TXB);
 
@@ -752,8 +708,7 @@ r92f_iqk_tx_rx_path_b(struct rtwn_softc *sc)
 	rtwn_bb_write(sc, R92C_IQK_AGC_RSP, 0x0086a911);
 
 	r92f_iqk_one_shot(sc);
-
-	rtwn_delay(sc, 15);
+	rtwn_delay(sc, 15000);
 
 	r92f_iqk_poll(sc, R92F_IQK_RPT_TXB);
 
@@ -805,8 +760,7 @@ r92f_iqk_tx_rx_path_b(struct rtwn_softc *sc)
 	rtwn_bb_write(sc, R92C_IQK_AGC_RSP, 0x0046a911);
 
 	r92f_iqk_one_shot(sc);
-
-	rtwn_delay(sc, 15);
+	rtwn_delay(sc, 15000);
 
 	r92f_iqk_poll(sc, R92F_IQK_RPT_RXB);
 
@@ -826,50 +780,20 @@ r92f_iqk_tx_rx_path_b(struct rtwn_softc *sc)
 	    ((reg_ecc & 0x03ff0000) != 0x00360000))
 		result |= 0x02;
 	else
-		RTWN_DPRINTF(sc, RTWN_DEBUG_CALIB, "%s: Path B RX IQK failed!\n", __func__);
-
-	return (result);
-}
-
-typedef int (*r92f_iqk_func)(struct rtwn_softc *);
-
-static int
-r92f_iqk_run_retry(struct rtwn_softc *sc, r92f_iqk_func func, int expected,
-    uint32_t before_reg, uint32_t after_reg, int32_t *before, int32_t *after,
-    int32_t fail_before, int32_t fail_after)
-{
-	int i, result;
-	uint32_t reg;
-
-	result = 0;
-	for (i = 0; i < R92F_IQK_MAX_RETRIES; i++) {
-		result = func(sc);
-
-		if (result == expected) {
-			reg = rtwn_bb_read(sc, before_reg);
-			*before = MS(reg, R92C_POWER_IQK_RESULT);
-
-			reg = rtwn_bb_read(sc, after_reg);
-			*after = MS(reg, R92C_POWER_IQK_RESULT);
-			break;
-		}
-
-		*before = fail_before;
-		*after = fail_after;
-	}
+		RTWN_DPRINTF(sc, RTWN_DEBUG_CALIB, "%s: Path B RX IQK failed!\n",
+		    __func__);
 
 	return (result);
 }
 
 static void
-r92f_iq_calib_run(struct rtwn_softc *sc,
-    struct r92f_iqk_regs_vals *iqk_backup_regs,
-    struct r92f_iqk_run_result *tx_result,
-    struct r92f_iqk_run_result *rx_result, int t)
+r92f_iq_calib_run(struct rtwn_softc *sc, struct r92f_iqk_regs_vals *backup,
+    int result[][8], int t)
 {
 	struct r92f_softc *rs = sc->sc_priv;
 	uint32_t rx_initial_gain_a, rx_initial_gain_b;
-	int path_a_ok, path_a_tx_ok, path_b_ok, path_b_tx_ok;
+	uint32_t reg;
+	int path_a_ok, path_b_ok, i;
 	uint8_t rfe = rs->rfe;
 
 	/*
@@ -884,7 +808,7 @@ r92f_iq_calib_run(struct rtwn_softc *sc,
 	
 	if (t == 0) {
 		/* Save ADDA parameters, turn Path A ADDA on */
-		r92f_iqk_save_regs(sc, iqk_backup_regs);
+		r92f_iqk_save_regs(sc, backup);
 	}
 
 	rtwn_bb_setbits(sc, R92C_FPGA0_RFPARAM(1), 0, 0x80000000);
@@ -915,38 +839,86 @@ r92f_iq_calib_run(struct rtwn_softc *sc,
 		rtwn_bb_setbits(sc, R92F_DPDT_CTRL, 0x8000000, 0x0);
 	}
 
-	/* path B standby */
-	rtwn_bb_setbits(sc, R92C_FPGA0_IQK, 0xffffff00, 0x000000);
-	rtwn_rf_write(sc, 1, R92C_RF_AC, 0x10000);
-	rtwn_bb_setbits(sc, R92C_FPGA0_IQK, 0xffffff00, 0x80800000);
+	if (sc->nrxchains > 1) {
+		/* path B standby */
+		rtwn_bb_setbits(sc, R92C_FPGA0_IQK, 0xffffff00, 0x000000);
+		rtwn_rf_write(sc, 1, R92C_RF_AC, 0x10000);
+		rtwn_bb_setbits(sc, R92C_FPGA0_IQK, 0xffffff00, 0x80800000);
+	}
 
-	path_a_tx_ok = r92f_iqk_run_retry(sc, r92f_iqk_tx_path_a, 0x01,
-	    R92C_TX_POWER_IQK_BEFORE(0), R92C_TX_POWER_IQK_AFTER(0),
-	    &tx_result[t].before[PATH_A], &tx_result[t].after[PATH_A],
-	    0x100, 0x0);
+	for (i = 0; i < R92F_IQK_MAX_RETRIES; i++) {
+		path_a_ok = r92f_iqk_tx_path_a(sc);
 
-	path_a_ok = r92f_iqk_run_retry(sc, r92f_iqk_tx_rx_path_a, 0x03,
-	    R92C_RX_POWER_IQK_BEFORE(0), R92C_RX_POWER_IQK_AFTER(0),
-	    &rx_result[t].before[PATH_A], &rx_result[t].after[PATH_A],
-	    0x100, 0x0);
+		if (path_a_ok == 0x01) {
+			reg = rtwn_bb_read(sc, R92C_TX_POWER_IQK_BEFORE(0));
+			result[t][0] = (reg >> 16) & 0x3ff;
 
-	if (!path_a_tx_ok || !path_a_ok)
+			reg = rtwn_bb_read(sc, R92C_TX_POWER_IQK_AFTER(0));
+			result[t][1] = (reg >> 16) & 0x3ff;
+			break;
+		} else {
+			result[t][0] = 0x100;
+			result[t][1] = 0x0;
+		}
+	}
+
+	for (i = 0; i < R92F_IQK_MAX_RETRIES; i++) {
+		path_a_ok = r92f_iqk_tx_rx_path_a(sc);
+
+		if (path_a_ok == 0x03) {
+			reg = rtwn_bb_read(sc, R92C_RX_POWER_IQK_BEFORE(0));
+			result[t][2] = (reg >> 16) & 0x3ff;
+
+			reg = rtwn_bb_read(sc, R92C_RX_POWER_IQK_AFTER(0));
+			result[t][3] = (reg >> 16) & 0x3ff;
+			break;
+		} else {
+			result[t][2] = 0x100;
+			result[t][3] = 0x0;
+		}
+	}
+
+	if (!path_a_ok)
 		RTWN_DPRINTF(sc, RTWN_DEBUG_CALIB, "%s: Path A IQK failed!\n",
 		    __func__);
 
-	path_b_tx_ok = r92f_iqk_run_retry(sc, r92f_iqk_tx_path_b, 0x01,
-	    R92C_TX_POWER_IQK_BEFORE(1), R92C_TX_POWER_IQK_AFTER(1),
-	    &tx_result[t].before[PATH_B], &tx_result[t].after[PATH_B],
-	    0x100, 0x0);
+	for (i = 0; i < R92F_IQK_MAX_RETRIES; i++) {
+		path_b_ok = r92f_iqk_tx_path_b(sc);
 
-	path_b_ok = r92f_iqk_run_retry(sc, r92f_iqk_tx_rx_path_b, 0x03,
-	    R92C_RX_POWER_IQK_BEFORE(1), R92C_RX_POWER_IQK_AFTER(1),
-	    &rx_result[t].before[PATH_B], &rx_result[t].after[PATH_B],
-	    0x100, 0x0);
+		if (path_b_ok == 0x01) {
+			reg = rtwn_bb_read(sc, R92C_TX_POWER_IQK_BEFORE(1));
+			result[t][4] = (reg >> 16) & 0x3ff;
 
-	if (!path_b_tx_ok || !path_b_ok )
-		RTWN_DPRINTF(sc, RTWN_DEBUG_CALIB, "%s: Path B IQK failed!\n",
-		    __func__);
+			reg = rtwn_bb_read(sc, R92C_TX_POWER_IQK_AFTER(1));
+			result[t][5] = (reg >> 16) & 0x3ff;
+			break;
+		} else {
+			result[t][4] = 0x100;
+			result[t][5] = 0x0;
+		}
+	}
+
+	if (sc->nrxchains > 1) {
+		for (i = 0; i < R92F_IQK_MAX_RETRIES; i++) {
+			path_b_ok = r92f_iqk_tx_rx_path_b(sc);
+
+			if (path_b_ok == 0x03) {
+				reg = rtwn_bb_read(sc, R92C_RX_POWER_IQK_BEFORE(1));
+				result[t][6] = (reg >> 16) & 0x3ff;
+
+				reg = rtwn_bb_read(sc, R92C_RX_POWER_IQK_AFTER(1));
+				result[t][7] = (reg >> 16) & 0x3ff;
+				break;
+			} else {
+				result[t][6] = 0x100;
+				result[t][7] = 0x0;
+			}
+		}
+
+		if (!path_b_ok)
+			RTWN_DPRINTF(sc, RTWN_DEBUG_CALIB, "%s: Path B IQK failed!\n",
+			    __func__);
+	}
 
 	/* Back to BB mode, load original value */
 	rtwn_bb_setbits(sc, R92C_FPGA0_IQK, 0xffffff00, 0);
@@ -960,7 +932,7 @@ r92f_iq_calib_run(struct rtwn_softc *sc,
 	rtwn_bb_write(sc, R92C_HSSI_PARAM1(0), 0x01000100);
 
 	/* Reload ADDA power saving parameters, MAC parameters and BB parameters */
-	r92f_iqk_restore_regs(sc, iqk_backup_regs);
+	r92f_iqk_restore_regs(sc, backup);
 
 	rtwn_bb_setbits(sc, R92C_FPGA0_RFPARAM(1), 0x80000000, 0);
 
@@ -968,29 +940,26 @@ r92f_iq_calib_run(struct rtwn_softc *sc,
 	rtwn_bb_setbits(sc, R92C_OFDM0_AGCCORE1(0), 0xff, 0x50);
 	rtwn_bb_setbits(sc, R92C_OFDM0_AGCCORE1(0), 0xff,
 	    rx_initial_gain_a & 0xff);
-	rtwn_bb_setbits(sc, R92C_OFDM0_AGCCORE1(1), 0xff, 0x50);
-	rtwn_bb_setbits(sc, R92C_OFDM0_AGCCORE1(1), 0xff,
-	    rx_initial_gain_b & 0xff);
+	if (sc->nrxchains > 1) {
+		rtwn_bb_setbits(sc, R92C_OFDM0_AGCCORE1(1), 0xff, 0x50);
+		rtwn_bb_setbits(sc, R92C_OFDM0_AGCCORE1(1), 0xff,
+		    rx_initial_gain_b & 0xff);
+	}
 }
 
 void
 r92f_iq_calib(struct rtwn_softc *sc)
 {
+	struct r92f_softc *rs = sc->sc_priv;
+	struct r92f_iqk_regs_vals backup_regs;
 	int32_t reg_e94, reg_e9c, reg_ea4, reg_eac;
 	int32_t reg_eb4, reg_ebc, reg_ec4, reg_ecc;
-	struct r92f_softc *rs = sc->sc_priv;
 	uint32_t path_a_0xdf, path_a_0x35;
 	uint32_t path_b_0xdf, path_b_0x35;
 	bool path_a_ok, path_b_ok;
 	uint8_t rfe = rs->rfe;
 	uint32_t rfe_path_select;
-	struct r92f_iqk_regs_vals backup_regs;
-	struct r92f_iqk_run_result tx_result[3] = { {{0}, {0}} };
-	struct r92f_iqk_run_result rx_result[3] = { {{0}, {0}} };
-	struct r92f_iqk_run_result tx_merged = { 0 };
-	struct r92f_iqk_run_result rx_merged = { 0 };
-	struct r92f_iqk_run_result *tx_selected = NULL;
-	struct r92f_iqk_run_result *rx_selected = NULL;
+	int result[4][8]; /* last is final result */
 	int i, candidate;
 	int32_t reg_tmp = 0;
 	bool match;
@@ -1002,73 +971,51 @@ r92f_iq_calib(struct rtwn_softc *sc)
 	path_b_0xdf = rtwn_rf_read(sc, 1, R88F_RF_GAIN_CCA);
 	path_b_0x35 = rtwn_rf_read(sc, 1, R92F_RF_GAIN_P1);
 
+	memset(result, 0, sizeof(result));
 	candidate = -1;
 
 	path_a_ok = false;
 	path_b_ok = false;
 
 	for (i = 0; i < 3; i++) {
-		r92f_iq_calib_run(sc, &backup_regs, tx_result, rx_result, i);
+		r92f_iq_calib_run(sc, &backup_regs, result, i);
 
 		if (i == 1) {
-			if (r92f_iq_calib_compare_results(&tx_result[0],
-			    &rx_result[0], &tx_result[1], &rx_result[1],
-			    &tx_merged, &rx_merged)) {
+			if (r92f_iq_calib_compare_results(sc, result, 0, 1)) {
 				candidate = 0;
 				break;
 			}
 		}
 
 		if (i == 2) {
-			if (r92f_iq_calib_compare_results(&tx_result[0],
-			    &rx_result[0], &tx_result[2], &rx_result[2],
-			    &tx_merged, &rx_merged)) {
+			if (r92f_iq_calib_compare_results(sc, result, 0, 2)) {
 				candidate = 0;
 				break;
 			}
 
-			match = r92f_iq_calib_compare_results(&tx_result[1],
-			    &rx_result[1], &tx_result[2], &rx_result[2],
-			    &tx_merged, &rx_merged);
+			match = r92f_iq_calib_compare_results(sc, result, 1, 2);
 			if (match) {
 				candidate = 1;
 			} else {
-				reg_tmp += tx_merged.before[PATH_A];
-				reg_tmp += tx_merged.after[PATH_A];
-				reg_tmp += rx_merged.before[PATH_A];
-				reg_tmp += rx_merged.after[PATH_A];
-				reg_tmp += tx_merged.before[PATH_B];
-				reg_tmp += tx_merged.after[PATH_B];
-				reg_tmp += rx_merged.before[PATH_B];
-				reg_tmp += rx_merged.after[PATH_B];
-
-				if (!reg_tmp) {
-					RTWN_DPRINTF(sc, RTWN_DEBUG_CALIB,
-					    "%s: IQK failed completely\n",
-					    __func__);
-					candidate = -1;
-				} else
+				for (i = 0; i < 8; i++)
+					reg_tmp += result[3][i];
+				if (reg_tmp)
 					candidate = 3;
+				else
+					candidate = -1;
 			}
 		}
 	}
 
 	if (candidate >= 0) {
-		if (candidate == 3) {
-			tx_selected = &tx_merged;
-			rx_selected = &rx_merged;
-		} else {
-			tx_selected = &tx_result[candidate];
-			rx_selected = &rx_result[candidate];
-		}
-		reg_e94 = tx_selected->before[PATH_A];
-		reg_e9c = tx_selected->after[PATH_A];
-		reg_ea4 = rx_selected->before[PATH_A];
-		reg_eac = rx_selected->after[PATH_A];
-		reg_eb4 = tx_selected->before[PATH_B];
-		reg_ebc = tx_selected->after[PATH_B];
-		reg_ec4 = rx_selected->before[PATH_B];
-		reg_ecc = rx_selected->after[PATH_B];
+		reg_e94 = result[candidate][0];
+		reg_e9c = result[candidate][1];
+		reg_ea4 = result[candidate][2];
+		reg_eac = result[candidate][3];
+		reg_eb4 = result[candidate][4];
+		reg_ebc = result[candidate][5];
+		reg_ec4 = result[candidate][6];
+		reg_ecc = result[candidate][7];
 
 		RTWN_DPRINTF(sc, RTWN_DEBUG_CALIB,
 		    "%s: candidate is %x\n", __func__, candidate);
@@ -1088,12 +1035,12 @@ r92f_iq_calib(struct rtwn_softc *sc)
 
 	if (candidate >= 0) {
 		if (reg_e94)
-			r92f_fill_iqk_matrix_a(sc, path_a_ok, tx_selected,
-			    rx_selected, reg_ea4 == 0);
+			r92f_fill_iqk_matrix_a(sc, path_a_ok, result,
+			    candidate, reg_ea4 == 0);
 
 		if (reg_eb4)
-			r92f_fill_iqk_matrix_b(sc, path_b_ok, tx_selected,
-			    rx_selected, reg_ec4 == 0);
+			r92f_fill_iqk_matrix_b(sc, path_b_ok, result,
+			    candidate, reg_ec4 == 0);
 	}
 
 	rtwn_rf_write(sc, 0, R88F_RF_GAIN_CCA, path_a_0xdf);

@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Mir Saheb Ali <mirsahebali@pm.me>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #include <sys/cdefs.h>
 #include "opt_wlan.h"
 
@@ -34,6 +40,7 @@
 #include <dev/rtwn/rtl8192f/r92f.h>
 #include <dev/rtwn/rtl8192f/r92f_reg.h>
 #include <dev/rtwn/rtl8192f/r92f_rx_desc.h>
+#include <dev/rtwn/rtl8192f/r92f_var.h>
 
 #include <dev/rtwn/rtl8812a/r12a_rx_desc.h>
 
@@ -41,11 +48,17 @@ int8_t
 r92f_get_rssi_cck(struct rtwn_softc *sc, void *physt)
 {
 	struct r92f_rx_phystat *phy = (struct r92f_rx_phystat *)physt;
-	uint32_t rxdw3;
+	struct r92f_softc *rs = sc->sc_priv;
+	uint32_t rxdw0, rxdw3;
 	uint8_t vga_idx, lna_idx;
 	int8_t rx_pwr_all;
 
+	rxdw0 = le32toh(phy->rxdw0);
 	rxdw3 = le32toh(phy->rxdw3);
+
+	if (rs->cck_new_agc)
+		return ((int8_t)(MS(rxdw0, R92F_RXDW0_PWDB0) - 110));
+
 	lna_idx = (MS(rxdw3, R92F_RXDW3_LNA_H) << 3) | MS(rxdw3, R92F_RXDW3_LNA_L);
 	vga_idx = MS(rxdw3, R92F_RXDW3_VGA);
 
@@ -79,7 +92,6 @@ r92f_get_rssi_ofdm(struct rtwn_softc *sc, void *physt)
 	int rx_path;
 	uint8_t pwdb[4];
 
-
 	rxdw0 = le32toh(phy->rxdw0);
 	rxdw1 = le32toh(phy->rxdw1);
 
@@ -87,6 +99,9 @@ r92f_get_rssi_ofdm(struct rtwn_softc *sc, void *physt)
 
 	if (pagenum == 0)
 		return (MS(rxdw0, R92F_RXDW0_PWDB0) - 110);
+
+	if (pagenum > 2)
+		return (0);
 
 	pwdb[0] = MS(rxdw0, R92F_RXDW0_PWDB0);
 	pwdb[1] = MS(rxdw0, R92F_RXDW0_PWDB1);
@@ -106,17 +121,22 @@ r92f_get_rx_stats(struct rtwn_softc *sc, struct ieee80211_rx_stats *rxs,
     const void *desc, const void *physt_ptr)
 {
 	const struct r92c_rx_stat *stat = desc;
-	uint32_t rxdw1, rxdw3, rxdw4;
+	uint32_t rxdw0, rxdw1, rxdw3, rxdw4;
 	uint8_t rate;
 
+	rxdw0 = le32toh(stat->rxdw0);
 	rxdw1 = le32toh(stat->rxdw1);
 	rxdw3 = le32toh(stat->rxdw3);
 	rxdw4 = le32toh(stat->rxdw4);
 
 	rate = MS(rxdw3, R92F_RXDW3_MCS);
 
-	if (rxdw1 & R92C_RXDW1_AMSDU)
-		rxs->c_pktflags |= IEEE80211_RX_F_AMSDU;
+	if (rxdw1 & R92C_RXDW1_AMPDU) {
+		if (rxdw0 & R92C_RXDW0_PHYST)
+			rxs->c_pktflags |= IEEE80211_RX_F_AMPDU;
+		else
+			rxs->c_pktflags |= IEEE80211_RX_F_AMPDU_MORE;
+	}
 
 	if ((rxdw4 & R92F_RXDW4_SPLCP) && RTWN_RATE_IS_HT(rate))
 		rxs->c_pktflags |= IEEE80211_RX_F_SHORTGI;

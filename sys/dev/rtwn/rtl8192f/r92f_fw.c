@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Mir Saheb Ali <mirsahebali@pm.me>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #include <sys/cdefs.h>
 #include "opt_wlan.h"
 
@@ -78,10 +84,17 @@ r92f_fw_download_enable(struct rtwn_softc *sc, int enable)
 		rtwn_setbits_1_shift(sc, R92C_MCUFWDL, R92C_MCUFWDL_ROM_DLEN,
 		    0, 2);
 
-		rtwn_delay(sc, 100);
+		rtwn_delay(sc, 100000); /* 100ms */
 	} else {
 		/* MCU download disable. */
 		rtwn_setbits_1(sc, R92C_MCUFWDL, R92C_MCUFWDL_EN, 0);
 	}
 }
+
+int
+r92f_fw_write_finish(struct rtwn_softc *sc)
+{
+	return (rtwn_write_1(sc, R92C_HMETFR, 0x0f));
+}
+
 #endif

@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Mir Saheb Ali <mirsahebali@pm.me>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 /*	$OpenBSD: if_urtwn.c,v 1.16 2011/02/10 17:26:40 jakemsr Exp $	*/
 
 /*-
@@ -66,10 +72,24 @@ r92f_parse_rom(struct rtwn_softc *sc, uint8_t *buf)
 	uint8_t pwr_diff;
 	int i, j, k;
 
-	sc->thermal_meter = rom->thermal_meter;
+	rs->bb_gain[0] = buf[0x1ec];
+	rs->bb_gain[1] = buf[0x1ee];
+	rs->bb_gain[2] = buf[0x1ea];
 
-	rs->crystalcap = RTWN_GET_ROM_VAR(rom->crystalcap,
-	    R92E_ROM_CRYSTALCAP_DEF);
+	if (rs->bb_gain[1] != 0xff) {
+		if (rs->bb_gain[0] == 0xff) {
+			rs->bb_gain[0] = rs->bb_gain[1];
+		}
+		if (rs->bb_gain[2] == 0xff) {
+			rs->bb_gain[2] = rs->bb_gain[1];
+		}
+	}
+
+	RTWN_DPRINTF(sc, RTWN_DEBUG_ROM,
+	    "%s: bb_gain ch1-3=%02x ch4-9=%02x ch10-14=%02x\n", __func__,
+	    rs->bb_gain[0], rs->bb_gain[1], rs->bb_gain[2]);
+
+	sc->thermal_meter = rom->thermal_meter;
 
 	for (i = 0; i < sc->ntxchains; i++) {
 		struct r92e_tx_pwr_2g *pwr_2g = &rom->tx_pwr[i].pwr_2g;
@@ -93,17 +113,6 @@ r92f_parse_rom(struct rtwn_softc *sc, uint8_t *buf)
 		rs->bw20_tx_pwr_diff_2g[i][0] = RTWN_SIGN4TO8(
 		    MS(pwr_diff_2g->ht20_ofdm, HIGH_PART));
 		rs->bw40_tx_pwr_diff_2g[i][0] = 0;
-		pwr_diff = RTWN_GET_ROM_VAR(pwr_diff_2g->ht20_ofdm,
-		    R92E_DEF_TX_PWR_HT20_DIFF);
-		if (pwr_diff != R92E_DEF_TX_PWR_HT20_DIFF) {
-			rs->ofdm_tx_pwr_diff_2g[i][0] = RTWN_SIGN4TO8(
-			    MS(pwr_diff_2g->ht20_ofdm, LOW_PART));
-			rs->bw20_tx_pwr_diff_2g[i][0] = RTWN_SIGN4TO8(
-			    MS(pwr_diff_2g->ht20_ofdm, HIGH_PART));
-		} else {
-			rs->ofdm_tx_pwr_diff_2g[i][0] =
-			rs->bw20_tx_pwr_diff_2g[i][0] = pwr_diff;
-		}
 
 		for (j = 1, k = 0; k < nitems(pwr_diff_2g->diff123); j++, k++) {
 			pwr_diff = RTWN_GET_ROM_VAR(
@@ -137,8 +146,8 @@ r92f_parse_rom(struct rtwn_softc *sc, uint8_t *buf)
 		}
 	}
 
-	rs->regulatory = MS(rom->rf_board_opt, R92C_ROM_RF1_REGULATORY);
-	rs->crystalcap = rom->crystalcap & 0x3f;
+	rs->crystalcap = (rom->crystalcap == 0xff) ?
+	    R92E_ROM_CRYSTALCAP_DEF : (rom->crystalcap & 0x3f);
 	rs->rfe = rom->rfe_opt & 0x1f;
 
 	/* Read MAC address. */

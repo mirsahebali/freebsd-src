@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Mir Saheb Ali <mirsahebali@pm.me>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #ifndef R92F_VAR_H
 #define R92F_VAR_H
 
@@ -14,12 +20,11 @@ struct r92f_softc {
 	int8_t bw20_tx_pwr_diff_2g[R92F_MAX_RF_PATH][R92E_MAX_TX_COUNT];
 	int8_t bw40_tx_pwr_diff_2g[R92F_MAX_RF_PATH][R92E_MAX_TX_COUNT];
 
+	uint8_t bb_gain[3]; /* efuse 0x1ea/0x1ec/0x1ee */
 	uint8_t regulatory;
 	uint8_t crystalcap;
 	uint8_t rfe;
-
-
-	void	(*rs_tx_setup_macid)(void *, int);
+	bool cck_new_agc;
 };
 
 #endif /* R92F_VAR_H */
