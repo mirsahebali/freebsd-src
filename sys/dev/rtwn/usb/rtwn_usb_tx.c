@@ -308,6 +308,16 @@ rtwn_usb_tx_start(struct rtwn_softc *sc, struct ieee80211_node *ni,
 	txd->pktlen = htole16(m->m_pkthdr.len);
 	txd->offset = sc->txdesc_len;
 
+	/* the driver sets the _OWN bit in the descriptor to tell the hardware
+	* that when it reads this bit, the descriptor (and thus buffer) is
+	* owned by the hardware then the hardware clears the bit when it's
+	* done with the packet - (Adrian Chadd) */
+	/* but...for 8192FU, the OWN bit has different meaning for the hardware
+	* hence the need for a separate HAL which would *not* set the bit
+	* - (Mir Saheb Ali) */
+	rtwn_usb_tx_pre_checksum(uc, txd);
+
+	/* inverted for RTL8192FU, prevents tx hang */
 	rtwn_usb_tx_checksum(uc, txd);
 
 	/* Dump Tx descriptor. */

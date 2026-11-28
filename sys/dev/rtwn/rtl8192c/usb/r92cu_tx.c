@@ -69,9 +69,14 @@ r92cu_dump_tx_desc(struct rtwn_softc *sc, const void *desc)
 }
 
 void
-r92cu_tx_checksum(struct rtwn_tx_desc_common *txd)
+r92cu_tx_pre_checksum(struct rtwn_tx_desc_common *txd)
 {
 	txd->flags0 |= RTWN_FLAGS0_OWN;
+}
+
+void
+r92cu_tx_checksum(struct rtwn_tx_desc_common *txd)
+{
 	txd->txdw7.usb_checksum = 0;
 	txd->txdw7.usb_checksum = rtwn_usb_calc_tx_checksum(txd);
 }

@@ -150,6 +150,7 @@ r92cu_attach(struct rtwn_usb_softc *uc)
 
 	/* USB part. */
 	uc->uc_align_rx			= r92cu_align_rx;
+	uc->uc_tx_pre_checksum		= r92cu_tx_pre_checksum;
 	uc->uc_tx_checksum		= r92cu_tx_checksum;
 	uc->tx_agg_desc_num		= 6;
 

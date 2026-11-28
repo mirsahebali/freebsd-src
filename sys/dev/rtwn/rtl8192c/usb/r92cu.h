@@ -50,6 +50,7 @@ int	r92cu_align_rx(int, int);
 
 /* r92cu_tx.c */
 void	r92cu_dump_tx_desc(struct rtwn_softc *, const void *);
+void	r92cu_tx_pre_checksum(struct rtwn_tx_desc_common *);
 void	r92cu_tx_checksum(struct rtwn_tx_desc_common *);
 
 #endif	/* RTL8192CU_H */

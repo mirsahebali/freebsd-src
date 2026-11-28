@@ -75,6 +75,7 @@ struct rtwn_usb_softc {
 	rtwn_datahead		uc_tx_pending[RTWN_BULK_EP_COUNT];
 
 	int			(*uc_align_rx)(int, int);
+	void		    (*uc_tx_pre_checksum)(struct rtwn_tx_desc_common *);
 	void			(*uc_tx_checksum)(struct rtwn_tx_desc_common *);
 
 	int			ntx;
@@ -90,6 +91,8 @@ struct rtwn_usb_softc {
 
 #define rtwn_usb_align_rx(_uc, _totlen, _len) \
 	(((_uc)->uc_align_rx)((_totlen), (_len)))
+#define rtwn_usb_tx_pre_checksum(_uc, _txd) \
+	(((_uc)->uc_tx_pre_checksum)((_txd)))
 #define rtwn_usb_tx_checksum(_uc, _txd) \
 	(((_uc)->uc_tx_checksum)((_txd)))
 
